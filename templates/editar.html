@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block contenido %} 
+
+    <h1>Editar Prenda</h1>
+
+    <form method="POST" class="formulario">
+        <label for="nombre">Nombre de la prenda</label>
+        <input type="text" id="nombre" name="nombre" value="{{prenda.nombre}}" required>
+
+        <label for="tipo">Tipo</label>
+        <select id="tipo" name="tipo">
+           {% for opcion in ["Camisa", "Pantalón", "Zapatos","Accesorios"]%}
+                <option {% if opcion ==prenda.tipo%}selected{% endif %}>{{ opcion }}</option>
+                {%endfor%}
+        </select>
+
+        <label for="color">Color</label>
+        <input type="text" id="color" name="color" value="{{prenda.color}}" required>
+
+        <label for="ocasion">Ocasión</label>
+        <select id="ocasion" name="ocasion">
+             {% for opcion in ["Casual", "Formal", "Fiesta","Deporte"]%}
+                <option {% if opcion ==prenda.ocasion%}selected{% endif %}>{{ opcion }}</option>
+                {%endfor%}
+        </select>
+        
+        <button type="submit">Guardar prenda</button>
+    </form>
+
+    {%endblock%}

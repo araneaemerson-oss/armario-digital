@@ -40,6 +40,7 @@ def prendas():
     conexion.close()
     return render_template("prendas.html" , prendas=lista_prendas)
 
+
 @app.route("/subir", methods=["GET","POST"])
 def subir():
     if request.method=="POST":
@@ -77,6 +78,28 @@ def borrar(id):
     return redirect("/prendas")
 
 
+@app.route("/editar/<int:id>", methods=["GET","POST"])
+def editar(id):
+    if request.method=="POST":
+        conexion = conectar()
+        conexion.execute(
+            "UPDATE prendas SET nombre = ?,tipo = ?, color = ?, ocasion = ? WHERE id = ?",
+            (   request.form["nombre"],
+                request.form["tipo"],
+                request.form["color"],
+                request.form["ocasion"],
+                id)
+            )
+        conexion.commit()
+        conexion.close()
+        return redirect("/prendas")
+
+    conexion = conectar()
+    prenda = conexion.execute(
+        "SELECT * FROM prendas WHERE id=?",(id,)).fetchone()
+    conexion.close()
+    return render_template("/editar.html", prenda=prenda)
+    
         
 
 crear_tabla()
