@@ -1,0 +1,14 @@
+# Base de datos local (cada persona tiene la suya)
+*.db
+armario_db
+
+# Fotos subidas por el usuario
+static/uploads/
+
+# Archivos de Python que se generan solos
+__pycache__/
+*.pyc
+
+# Configuración local y archivos secretos
+.env
+.vscode/
