@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block contenido %} 
+
+    <h1>Subir prenda</h1>
+
+    <form method="POST" enctype="multipart/form-data" class="formulario">
+        <label for="nombre">Nombre de la prenda</label>
+        <input type="text" id="nombre" name="nombre" placeholder="ej.: camisa azul" required>
+
+        <label for="tipo">Tipo</label>
+        <select id="tipo" name="tipo">
+            <option>Camisa</option>
+            <option>Pantalón</option>
+            <option>Zapatos</option>
+            <option>Accesorios</option>
+        </select>
+
+        <label for="color">Color</label>
+        <input type="text" id="color" name="color" placeholder="Ej.:azul" required>
+
+        <label for="ocasion">Ocasión</label>
+        <select id="ocasion" name="ocasion">
+            <option>Casual</option>
+            <option>Formal</option> 
+            <option>Fiesta</option>
+            <option>Deporte</option>
+        </select>
+
+        <label for="foto">Foto</label>
+        <input type="file" id="foto" name="foto" accept="image/*" required>
+        
+        <button type="submit">Guardar prenda</button>
+    </form>
+
+    {%endblock%}
