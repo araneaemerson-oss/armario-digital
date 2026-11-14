@@ -13,6 +13,9 @@
                 {% endif%}
                 <h2>{{ prenda.nombre }}</h2>
                 <p>{{prenda.tipo}} - {{prenda.color}} - {{prenda.ocasion}}</p>
+                <form method="POST" action="/borrar/{{prenda.id}}">
+                    <button type="submit"> Borrar </button>
+                </form>
 
             </div>  
         {%endfor%}

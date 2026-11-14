@@ -41,8 +41,3 @@ La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la ap
 ## 👤 Autor
 
 **Fabricio Aranea** — Tecnólogo en Desarrollo de Software, Guayaquil, Ecuador.
-
-
-## 🤖 Uso de IA
-
-Desarrollado con apoyo de IA (Claude) como tutor: la usé para aprender los conceptos y revisar mi código, que fui escribiendo y corrigiendo yo mismo.

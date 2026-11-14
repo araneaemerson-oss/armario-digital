@@ -63,8 +63,21 @@ def subir():
         return redirect("/prendas")
 
 
+    return render_template("subir.html")
 
-    return render_template("subir.html")    
+@app.route("/borrar/<int:id>", methods=["POST"])
+def borrar(id):
+    conexion = conectar()
+    conexion.execute(
+        "DELETE FROM prendas WHERE id=?", (id,)
+    )
+
+    conexion.commit()
+    conexion.close()
+    return redirect("/prendas")
+
+
+        
 
 crear_tabla()
 app.run(debug=True)
