@@ -31,7 +31,15 @@ os.makedirs(CARPETA_FOTOS, exist_ok=True)
 
 @app.route("/")
 def inicio():
-    return render_template("index.html") 
+    conexion = conectar()
+    lista_prendas =  conexion.execute(
+        "SELECT * FROM prendas"
+    ).fetchall()
+    conexion.close()
+    conteo = {"Camisa": 0, "Pantalón": 0, "Zapatos": 0, "Accesorios": 0}
+    for prenda in lista_prendas:
+        conteo[prenda["tipo"]] += 1
+    return render_template("index.html", total=len(lista_prendas), conteo=conteo) 
 
 @app.route("/prendas")
 def prendas():

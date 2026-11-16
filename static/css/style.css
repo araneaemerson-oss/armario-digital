@@ -180,3 +180,85 @@ a{
 .boton-borrar:hover {
     background-color: #FBEAE8;
 }
+
+
+
+/* ---------- Página de Inicio ---------- */
+.hero {
+    background: #FFFFFF;
+    border: 1px solid #E5E1D8;
+    border-radius: 24px;
+    padding: 48px;
+    margin-bottom: 40px;
+}
+.saludo {
+    margin: 0 0 8px;
+    color: #5C5A55;
+    font-weight: 700;
+}
+.hero h1 {
+    margin: 0 0 12px;
+}
+.subtitulo {
+    margin: 0 0 24px;
+    font-size: 18px;
+    color: #5C5A55;
+}
+.hero-botones {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+.hero-botones .boton {
+    padding: 12px 20px;
+    font-size: 16px;
+}
+.boton-principal {
+    background: #1A1A1A;
+    color: #FFFFFF;
+}
+.boton-principal:hover {
+    background: #2F5D50;
+}
+.boton-secundario {
+    background: #E3ECE8;
+    color: #1F4038;
+}
+
+.titulo-seccion {
+    font-size: 24px;
+    margin: 0 0 16px;
+}
+.categorias {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 16px;
+}
+.categoria {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: #FFFFFF;
+    border: 1px solid #E5E1D8;
+    border-radius: 16px;
+    padding: 24px;
+    color: #1A1A1A;
+    text-decoration: none;
+    transition: transform 0.15s, border-color 0.15s;
+}
+.categoria:hover {
+    transform: translateY(-4px);
+    border-color: #2F5D50;
+}
+.icono {
+    font-size: 36px;
+}
+.categoria-nombre {
+    font-size: 18px;
+    font-weight: 800;
+}
+.categoria-numero {
+    color: #5C5A55;
+    font-size: 14px;
+    font-weight: 600;
+}

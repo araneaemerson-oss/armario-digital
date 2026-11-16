@@ -1,7 +1,38 @@
-{%extends "base.html"%}
+{% extends "base.html" %}
+{% block contenido %}
 
-{% block contenido%}
-    <h1>Mi Armario Digital </h1>
-    <p>Bienvenido,Fabricio. Aquí verás toda tu ropa </p>
-    <a href="/prendas">Ver mis prendas</a>
-{%endblock%}
+<section class="hero">
+    <p class="saludo">Hola, Fabricio 👋</p>
+    <h1>¿Qué te pones hoy?</h1>
+    <p class="subtitulo">Tienes <strong>{{ total }}</strong> prendas en tu armario.</p>
+    <div class="hero-botones">
+        <a href="/prendas" class="boton boton-principal">Ver mis prendas</a>
+        <a href="/subir" class="boton boton-secundario">+ Subir prenda</a>
+    </div>
+</section>
+
+<h2 class="titulo-seccion">Categorías</h2>
+<div class="categorias">
+    <a href="/prendas?tipo=Camisa" class="categoria">
+        <span class="icono">👕</span>
+        <span class="categoria-nombre">Camisas</span>
+        <span class="categoria-numero">{{ conteo["Camisa"] }} prendas</span>
+    </a>
+    <a href="/prendas?tipo=Pantalón" class="categoria">
+        <span class="icono">👖</span>
+        <span class="categoria-nombre">Pantalones</span>
+        <span class="categoria-numero">{{ conteo["Pantalón"] }} prendas</span>
+    </a>
+    <a href="/prendas?tipo=Zapatos" class="categoria">
+        <span class="icono">👟</span>
+        <span class="categoria-nombre">Zapatos</span>
+        <span class="categoria-numero">{{ conteo["Zapatos"] }} prendas</span>
+    </a>
+    <a href="/prendas?tipo=Accesorios" class="categoria">
+        <span class="icono">🧢</span>
+        <span class="categoria-nombre">Accesorios</span>
+        <span class="categoria-numero">{{ conteo["Accesorios"] }} prendas</span>
+    </a>
+</div>
+
+{% endblock %}
