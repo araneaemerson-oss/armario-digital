@@ -137,3 +137,11 @@ a{
     color: #FFFFFF;
     border-color: #1A1A1A;
 }
+.vacio {
+    text-align: center;
+    padding:  48px;
+    background-color: #FFFFFF;
+    border: 1px dashed #D6D1C7;
+    border-radius: 16px;
+    color: #5C5A55;
+}
