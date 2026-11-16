@@ -3,7 +3,11 @@
 {% block contenido%}
 
     <h1>Mis Prendas</h1>
+    {% if tipo_actual %}
+        <p>Mostrando {{prendas|length}} prendas de tipo {{tipo_actual}} </p>
+    {% else %}
     <p>Tienes {{prendas|length}} prendas en tu armario</p>
+    {% endif %}
 
     <div class="filtros">
         <a href="/prendas" class="{% if not tipo_actual %}activo{%endif%}">Todas</a>
