@@ -4,6 +4,14 @@
 
     <h1>Mis Prendas</h1>
     <p>Tienes {{prendas|length}} prendas en tu armario</p>
+
+    <div class="filtros">
+        <a href="/prendas" class="{% if not tipo_actual %}activo{%endif%}">Todas</a>
+        <a href="/prendas?tipo=Camisa"class= "{% if tipo_actual == 'Camisa' %}activo{%endif%}">Camisas</a>
+        <a href="/prendas?tipo=Pantalon" class= "{% if tipo_actual == 'Pantalon' %}activo{%endif%}">Pantalones</a>
+        <a href="/prendas?tipo=Zapatos" class= "{% if tipo_actual == 'Zapatos' %}activo{%endif%}">Zapatos</a>
+        <a href="/prendas?tipo=Accesorios" class= "{% if tipo_actual == 'Accesorios' %}activo{%endif%}">Accesorios</a>
+    </div>
     
     <div class="grilla">
         {% for prenda in prendas%}

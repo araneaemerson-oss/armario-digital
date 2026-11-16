@@ -35,10 +35,15 @@ def inicio():
 
 @app.route("/prendas")
 def prendas():
+    tipo = request.args.get("tipo")
     conexion = conectar()
-    lista_prendas = conexion.execute("SELECT * FROM prendas").fetchall()
+
+    if tipo:
+        lista_prendas = conexion.execute("SELECT * FROM prendas WHERE tipo = ?",(tipo,)).fetchall()
+    else:
+        lista_prendas = conexion.execute("SELECT * FROM prendas").fetchall()
     conexion.close()
-    return render_template("prendas.html" , prendas=lista_prendas)
+    return render_template("prendas.html" , prendas=lista_prendas, tipo_actual=tipo)
 
 
 @app.route("/subir", methods=["GET","POST"])
