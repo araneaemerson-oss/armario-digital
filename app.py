@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, redirect
-import os
+import os, uuid
 from werkzeug.utils import secure_filename
 import sqlite3 
 
@@ -50,16 +50,16 @@ def prendas():
 def subir():
     if request.method=="POST":
         foto = request.files["foto"]
-        nombre_archivo = secure_filename(foto.filename)
+        nombre_archivo = uuid.uuid4().hex + "_" + secure_filename(foto.filename)
         foto.save(os.path.join(CARPETA_FOTOS, nombre_archivo))
 
         conexion = conectar()
         conexion.execute(
             "INSERT INTO prendas (nombre, tipo, color, ocasion, foto) VALUES (?, ?, ?, ?, ?)",
             (
-                request.form["nombre"],
+                request.form["nombre"].strip(),
                 request.form["tipo"],
-                request.form["color"],
+                request.form["color"].strip().capitalize(),
                 request.form["ocasion"],
                 "uploads/"+ nombre_archivo
             )
@@ -89,9 +89,9 @@ def editar(id):
         conexion = conectar()
         conexion.execute(
             "UPDATE prendas SET nombre = ?,tipo = ?, color = ?, ocasion = ? WHERE id = ?",
-            (   request.form["nombre"],
+            (   request.form["nombre"].strip(),
                 request.form["tipo"],
-                request.form["color"],
+                request.form["color"].strip().capitalize(),
                 request.form["ocasion"],
                 id)
             )

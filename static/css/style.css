@@ -145,3 +145,38 @@ a{
     border-radius: 16px;
     color: #5C5A55;
 }
+.acciones {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.acciones form {
+    margin: 0;
+}
+
+.boton {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.boton-editar {
+    background-color: #E3ECE8;
+    color: #1F4038;
+}
+
+.boton-borrar {
+    background-color: #FFFFFF;
+    color: #B3261E;
+    border-color: #E8C7C3;
+}
+
+.boton-borrar:hover {
+    background-color: #FBEAE8;
+}
