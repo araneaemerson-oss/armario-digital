@@ -262,3 +262,197 @@ a{
     font-size: 14px;
     font-weight: 600;
 }
+
+
+/* ---------- Formularios (Subir y Editar) ---------- */
+.formulario {
+    background-color: #FFFFFF;
+    border: 1px solid #E5E1D8;
+    border-radius: 20px;
+    padding: 32px;
+    max-width: 480px;
+    gap: 6px;
+}
+.formulario label {
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 10px;
+}
+.formulario input:focus,
+.formulario select:focus {
+    outline: none;
+    border-color: #2F5D50;
+    box-shadow: 0 0 0 3px #E3ECE8;
+}
+.formulario input[type="file"] {
+    padding: 8px;
+    background-color: #F5F3EF;
+    border-style: dashed;
+    cursor: pointer;
+}
+.formulario input[type="file"]::file-selector-button {
+    font-family: inherit;
+    font-weight: 700;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-right: 12px;
+    background-color: #1A1A1A;
+    color: #FFFFFF;
+    cursor: pointer;
+}
+.formulario button {
+    border: none;
+}
+.formulario button:hover {
+    background-color: #1F4038;
+}
+.cancelar {
+    text-align: center;
+    margin-top: 4px;
+    font-size: 14px;
+}
+
+/* ---------- Menú: página actual ---------- */
+.nav-links a.activo {
+    background-color: #1A1A1A;
+    color: #FFFFFF;
+}
+
+/* ---------- Celular (pantallas pequeñas) ---------- */
+@media (max-width: 700px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        padding: 16px;
+    }
+    .nav-links {
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .nav-links a {
+        padding: 8px 12px;
+    }
+    .contenido {
+        padding: 24px 16px;
+    }
+    h1 {
+        font-size: 34px;
+    }
+    .hero {
+        padding: 28px 20px;
+    }
+    .formulario {
+        padding: 20px;
+    }
+}
+
+/* ---------- Subir prenda ---------- */
+.subir-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    align-items: start;
+}
+.zona-foto {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+    background-color: #FFFFFF;
+    border: 2px dashed #D6D1C7;
+    border-radius: 20px;
+    cursor: pointer;
+    overflow: hidden;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+.zona-foto:hover {
+    border-color: #2F5D50;
+    background-color: #F8FBF9;
+}
+.zona-foto input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+.zona-texto {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 24px;
+    text-align: center;
+    color: #5C5A55;
+}
+.zona-icono {
+    font-size: 48px;
+}
+.zona-texto strong {
+    color: #1A1A1A;
+    font-size: 18px;
+}
+#vista-previa {
+    width: 100%;
+    height: 480px;
+    object-fit: contain;
+    padding: 16px;
+    box-sizing: border-box;
+}
+.zona-foto [hidden] {
+    display: none;
+}
+.subir-campos {
+    max-width: none;
+}
+.etiqueta {
+    font-weight: 700;
+    font-size: 14px;
+    margin-top: 10px;
+}
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.chips .chip {
+    position: relative;
+    margin-top: 0;
+    font-weight: 600;
+}
+.chip input {
+    position: absolute;
+    opacity: 0;
+}
+.chip span {
+    display: inline-block;
+    padding: 8px 16px;
+    border-radius: 999px;
+    border: 1px solid #D6D1C7;
+    background-color: #FFFFFF;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.15s;
+}
+.chip span:hover {
+    background-color: #E3ECE8;
+}
+.chip input:checked + span {
+    background-color: #1A1A1A;
+    color: #FFFFFF;
+    border-color: #1A1A1A;
+}
+
+@media (max-width: 700px) {
+    .subir-layout {
+        grid-template-columns: 1fr;
+    }
+    .zona-foto {
+        min-height: 260px;
+    }
+    #vista-previa {
+        height: 260px;
+    }
+}

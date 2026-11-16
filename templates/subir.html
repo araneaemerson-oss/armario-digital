@@ -1,36 +1,67 @@
 {% extends "base.html" %}
 
-{% block contenido %} 
+{% block contenido %}
 
     <h1>Subir prenda</h1>
+    <p class="subtitulo">Agrega una prenda nueva a tu armario.</p>
 
-    <form method="POST" enctype="multipart/form-data" class="formulario">
-        <label for="nombre">Nombre de la prenda</label>
-        <input type="text" id="nombre" name="nombre" placeholder="ej.: camisa azul" required>
+    <form method="POST" enctype="multipart/form-data" class="subir-layout">
 
-        <label for="tipo">Tipo</label>
-        <select id="tipo" name="tipo">
-            <option>Camisa</option>
-            <option>Pantalón</option>
-            <option>Zapatos</option>
-            <option>Accesorios</option>
-        </select>
+        <!-- Columna izquierda: la foto -->
+        <label for="foto" class="zona-foto">
+            <img id="vista-previa" alt="Vista previa de la prenda" hidden>
+            <div id="zona-texto" class="zona-texto">
+                <span class="zona-icono">📷</span>
+                <strong>Haz clic para elegir una foto</strong>
+                <span>JPG o PNG · con fondo claro se ve mejor</span>
+            </div>
+            <input type="file" id="foto" name="foto" accept="image/*" required>
+        </label>
 
-        <label for="color">Color</label>
-        <input type="text" id="color" name="color" placeholder="Ej.:azul" required>
+        <!-- Columna derecha: los datos -->
+        <div class="formulario subir-campos">
+            <label for="nombre">Nombre de la prenda</label>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej.: camisa azul" required>
 
-        <label for="ocasion">Ocasión</label>
-        <select id="ocasion" name="ocasion">
-            <option>Casual</option>
-            <option>Formal</option> 
-            <option>Fiesta</option>
-            <option>Deporte</option>
-        </select>
+            <span class="etiqueta">Tipo</span>
+            <div class="chips">
+                {% for opcion in ["Camisa", "Pantalón", "Zapatos", "Accesorios"] %}
+                    <label class="chip">
+                        <input type="radio" name="tipo" value="{{ opcion }}" {% if loop.first %}checked{% endif %}>
+                        <span>{{ opcion }}</span>
+                    </label>
+                {% endfor %}
+            </div>
 
-        <label for="foto">Foto</label>
-        <input type="file" id="foto" name="foto" accept="image/*" required>
-        
-        <button type="submit">Guardar prenda</button>
+            <label for="color">Color</label>
+            <input type="text" id="color" name="color" placeholder="Ej.: azul" required>
+
+            <span class="etiqueta">Ocasión</span>
+            <div class="chips">
+                {% for opcion in ["Casual", "Formal", "Fiesta", "Deporte"] %}
+                    <label class="chip">
+                        <input type="radio" name="ocasion" value="{{ opcion }}" {% if loop.first %}checked{% endif %}>
+                        <span>{{ opcion }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <button type="submit">Guardar prenda</button>
+        </div>
     </form>
 
-    {%endblock%}
+    <script>
+        // Cuando eliges una foto, la mostramos antes de guardarla
+        const inputFoto = document.getElementById("foto");
+        inputFoto.addEventListener("change", function () {
+            const archivo = inputFoto.files[0];
+            if (archivo) {
+                const vista = document.getElementById("vista-previa");
+                vista.src = URL.createObjectURL(archivo);
+                vista.hidden = false;
+                document.getElementById("zona-texto").hidden = true;
+            }
+        });
+    </script>
+
+{% endblock %}

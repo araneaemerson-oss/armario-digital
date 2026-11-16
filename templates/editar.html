@@ -2,7 +2,8 @@
 
 {% block contenido %} 
 
-    <h1>Editar Prenda</h1>
+    <h1>Editar prenda</h1>
+    <p class="subtitulo">Cambia los datos de tu prenda.</p>
 
     <form method="POST" class="formulario">
         <label for="nombre">Nombre de la prenda</label>
@@ -25,7 +26,8 @@
                 {%endfor%}
         </select>
         
-        <button type="submit">Guardar prenda</button>
+        <button type="submit">Guardar cambios</button>
+        <a href="/prendas" class="cancelar">Cancelar</a>
     </form>
 
     {%endblock%}

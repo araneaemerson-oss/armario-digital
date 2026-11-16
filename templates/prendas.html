@@ -4,9 +4,9 @@
 
     <h1>Mis Prendas</h1>
     {% if tipo_actual %}
-        <p>Mostrando {{prendas|length}} prendas de tipo {{tipo_actual}} </p>
+        <p>Mostrando {{prendas|length}} {% if prendas|length == 1 %}prenda{% else %}prendas{% endif %} de tipo {{tipo_actual}}</p>
     {% else %}
-    <p>Tienes {{prendas|length}} prendas en tu armario</p>
+    <p>Tienes {{prendas|length}} {% if prendas|length == 1 %}prenda{% else %}prendas{% endif %} en tu armario</p>
     {% endif %}
 
     <div class="filtros">

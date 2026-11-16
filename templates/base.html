@@ -2,6 +2,7 @@
 <html lang = "es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title> Armario Digital</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap" rel="stylesheet">
@@ -9,16 +10,16 @@
 </head>
 
 <body>
-    <header class="navbar">
-        <a class="logo " href="/">Armario Digital </a>
-        <nav class="nav-links">
-            <a href="/">Inicio</a>
-            <a href="/prendas">Mis Prendas</a>
-            <a href="/subir"> Subir prenda</a>
-            <a href="#">Probador </a>
-        </nav>
-    </header>
-    <main class="contenido ">
+    <nav class="navbar">
+        <span class="logo">👕 Armario Digital</span>
+        <div class="nav-links">
+            <a href="/" class="{% if request.path == '/' %}activo{% endif %}">Inicio</a>
+            <a href="/prendas" class="{% if request.path == '/prendas' or request.path.startswith('/editar') %}activo{% endif %}">Mis Prendas</a>
+            <a href="/subir" class="{% if request.path == '/subir' %}activo{% endif %}">Subir prenda</a>
+            <a href="#">Probador</a>
+        </div>
+    </nav>
+    <main class="contenido">
         {% block contenido%}{%endblock%}
     </main>
 </body>
