@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, flash
 import os, uuid
 from werkzeug.utils import secure_filename
 import sqlite3 
@@ -24,9 +24,27 @@ def crear_tabla():
     conexion.close()
 
 
-app = Flask (__name__)
+app = Flask(__name__)
+# Clave que Flask necesita para los mensajes "flash".
+# Más adelante, cuando subamos la app a internet, la pasaremos al archivo .env
+app.secret_key = os.environ.get("SECRET_KEY", "clave-de-desarrollo-armario")
+
 CARPETA_FOTOS = os.path.join("static", "uploads")
 os.makedirs(CARPETA_FOTOS, exist_ok=True)
+
+
+def guardar_foto(foto):
+    # Guarda la foto con un nombre único y devuelve la ruta para la base de datos
+    nombre_archivo = uuid.uuid4().hex + "_" + secure_filename(foto.filename)
+    foto.save(os.path.join(CARPETA_FOTOS, nombre_archivo))
+    return "uploads/" + nombre_archivo
+
+def borrar_foto_del_disco(ruta_foto):
+    # Borra el archivo de la foto (si existe) de la carpeta static/uploads
+    if ruta_foto:
+        ruta_completa = os.path.join("static", ruta_foto)
+        if os.path.exists(ruta_completa):
+            os.remove(ruta_completa)
 
 
 @app.route("/")
@@ -57,9 +75,7 @@ def prendas():
 @app.route("/subir", methods=["GET","POST"])
 def subir():
     if request.method=="POST":
-        foto = request.files["foto"]
-        nombre_archivo = uuid.uuid4().hex + "_" + secure_filename(foto.filename)
-        foto.save(os.path.join(CARPETA_FOTOS, nombre_archivo))
+        ruta_foto = guardar_foto(request.files["foto"])
 
         conexion = conectar()
         conexion.execute(
@@ -69,11 +85,12 @@ def subir():
                 request.form["tipo"],
                 request.form["color"].strip().capitalize(),
                 request.form["ocasion"],
-                "uploads/"+ nombre_archivo
+                ruta_foto
             )
         )
         conexion.commit()
         conexion.close()
+        flash("✅ Prenda guardada en tu armario")
         return redirect("/prendas")
 
 
@@ -82,36 +99,53 @@ def subir():
 @app.route("/borrar/<int:id>", methods=["POST"])
 def borrar(id):
     conexion = conectar()
+    prenda = conexion.execute("SELECT foto FROM prendas WHERE id=?", (id,)).fetchone()
     conexion.execute(
         "DELETE FROM prendas WHERE id=?", (id,)
     )
-
     conexion.commit()
     conexion.close()
+
+    if prenda:
+        borrar_foto_del_disco(prenda["foto"])
+    flash("🗑️ Prenda borrada")
     return redirect("/prendas")
 
 
 @app.route("/editar/<int:id>", methods=["GET","POST"])
 def editar(id):
+    conexion = conectar()
+    prenda = conexion.execute(
+        "SELECT * FROM prendas WHERE id=?",(id,)).fetchone()
+
+    if prenda is None:
+        conexion.close()
+        flash("⚠️ Esa prenda no existe")
+        return redirect("/prendas")
+
     if request.method=="POST":
-        conexion = conectar()
+        ruta_foto = prenda["foto"]          # por defecto se queda la foto de antes
+        foto_nueva = request.files.get("foto")
+        if foto_nueva and foto_nueva.filename != "":
+            ruta_foto = guardar_foto(foto_nueva)    # guardamos la nueva
+            borrar_foto_del_disco(prenda["foto"])   # y borramos la vieja
+
         conexion.execute(
-            "UPDATE prendas SET nombre = ?,tipo = ?, color = ?, ocasion = ? WHERE id = ?",
+            "UPDATE prendas SET nombre = ?, tipo = ?, color = ?, ocasion = ?, foto = ? WHERE id = ?",
             (   request.form["nombre"].strip(),
                 request.form["tipo"],
                 request.form["color"].strip().capitalize(),
                 request.form["ocasion"],
+                ruta_foto,
                 id)
             )
         conexion.commit()
         conexion.close()
+        flash("✏️ Cambios guardados")
         return redirect("/prendas")
 
-    conexion = conectar()
-    prenda = conexion.execute(
-        "SELECT * FROM prendas WHERE id=?",(id,)).fetchone()
     conexion.close()
-    return render_template("/editar.html", prenda=prenda)
+    return render_template("editar.html", prenda=prenda)
     
         
 

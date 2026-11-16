@@ -1,33 +1,74 @@
 {% extends "base.html" %}
 
-{% block contenido %} 
+{% block contenido %}
 
     <h1>Editar prenda</h1>
-    <p class="subtitulo">Cambia los datos de tu prenda.</p>
+    <p class="subtitulo">Cambia los datos o la foto de tu prenda.</p>
 
-    <form method="POST" class="formulario">
-        <label for="nombre">Nombre de la prenda</label>
-        <input type="text" id="nombre" name="nombre" value="{{prenda.nombre}}" required>
+    <form method="POST" enctype="multipart/form-data" class="subir-layout">
 
-        <label for="tipo">Tipo</label>
-        <select id="tipo" name="tipo">
-           {% for opcion in ["Camisa", "Pantalón", "Zapatos","Accesorios"]%}
-                <option {% if opcion ==prenda.tipo%}selected{% endif %}>{{ opcion }}</option>
-                {%endfor%}
-        </select>
+        <!-- Columna izquierda: la foto (opcional) -->
+        <label for="foto" class="zona-foto">
+            {% if prenda.foto %}
+                <img id="vista-previa" src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
+                <span class="cambiar-foto">📷 Clic para cambiar la foto</span>
+            {% else %}
+                <img id="vista-previa" alt="Vista previa de la prenda" hidden>
+                <div id="zona-texto" class="zona-texto">
+                    <span class="zona-icono">📷</span>
+                    <strong>Haz clic para elegir una foto</strong>
+                    <span>JPG o PNG · con fondo claro se ve mejor</span>
+                </div>
+            {% endif %}
+            <input type="file" id="foto" name="foto" accept="image/*">
+        </label>
 
-        <label for="color">Color</label>
-        <input type="text" id="color" name="color" value="{{prenda.color}}" required>
+        <!-- Columna derecha: los datos -->
+        <div class="formulario subir-campos">
+            <label for="nombre">Nombre de la prenda</label>
+            <input type="text" id="nombre" name="nombre" value="{{ prenda.nombre }}" required>
 
-        <label for="ocasion">Ocasión</label>
-        <select id="ocasion" name="ocasion">
-             {% for opcion in ["Casual", "Formal", "Fiesta","Deporte"]%}
-                <option {% if opcion ==prenda.ocasion%}selected{% endif %}>{{ opcion }}</option>
-                {%endfor%}
-        </select>
-        
-        <button type="submit">Guardar cambios</button>
-        <a href="/prendas" class="cancelar">Cancelar</a>
+            <span class="etiqueta">Tipo</span>
+            <div class="chips">
+                {% for opcion in ["Camisa", "Pantalón", "Zapatos", "Accesorios"] %}
+                    <label class="chip">
+                        <input type="radio" name="tipo" value="{{ opcion }}" {% if opcion == prenda.tipo %}checked{% endif %}>
+                        <span>{{ opcion }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <label for="color">Color</label>
+            <input type="text" id="color" name="color" value="{{ prenda.color }}" required>
+
+            <span class="etiqueta">Ocasión</span>
+            <div class="chips">
+                {% for opcion in ["Casual", "Formal", "Fiesta", "Deporte"] %}
+                    <label class="chip">
+                        <input type="radio" name="ocasion" value="{{ opcion }}" {% if opcion == prenda.ocasion %}checked{% endif %}>
+                        <span>{{ opcion }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <button type="submit">Guardar cambios</button>
+            <a href="/prendas" class="cancelar">Cancelar</a>
+        </div>
     </form>
 
-    {%endblock%}
+    <script>
+        // Cuando eliges una foto nueva, la mostramos antes de guardarla
+        const inputFoto = document.getElementById("foto");
+        inputFoto.addEventListener("change", function () {
+            const archivo = inputFoto.files[0];
+            if (archivo) {
+                const vista = document.getElementById("vista-previa");
+                vista.src = URL.createObjectURL(archivo);
+                vista.hidden = false;
+                const texto = document.getElementById("zona-texto");
+                if (texto) { texto.hidden = true; }
+            }
+        });
+    </script>
+
+{% endblock %}

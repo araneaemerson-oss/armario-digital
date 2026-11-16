@@ -23,6 +23,8 @@
             <div class="tarjeta">
                 {% if  prenda.foto%}
                     <img src="{{url_for('static', filename=prenda.foto)}}" alt="{{prenda.nombre}}">
+                {% else %}
+                    <div class="sin-foto">👕<span>Sin foto</span></div>
                 {% endif%}
                 <h2>{{ prenda.nombre }}</h2>
                 <p>{{prenda.tipo}} - {{prenda.color}} - {{prenda.ocasion}}</p>
