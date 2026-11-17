@@ -745,3 +745,26 @@ a{
         position: static;
     }
 }
+
+
+/* ---------- Quitar fondo ---------- */
+.interruptor {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background-color: #F3F8F5;
+    border: 1px solid #C8DAD2;
+    cursor: pointer;
+}
+.formulario .interruptor input {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    accent-color: #2F5D50;
+}
+.form-quitar-fondo {
+    margin-top: 16px;
+}

@@ -4,6 +4,14 @@ import os, uuid
 from werkzeug.utils import secure_filename
 import sqlite3 
 
+# rembg quita el fondo de las fotos con IA. Si no está instalado, la app sigue funcionando igual.
+try:
+    from rembg import remove as quitar_fondo_ia, new_session
+    REMBG_DISPONIBLE = True
+except ImportError:
+    REMBG_DISPONIBLE = False
+sesion_rembg = None      # el modelo de IA se carga la primera vez que se usa (tarda un poco)
+
 
 def conectar():
     conexion = sqlite3.connect("armario.db")
@@ -81,7 +89,7 @@ OCASIONES = ["Casual", "Formal", "Fiesta", "Deporte"]
 # Esto hace que TIPOS y OCASIONES se puedan usar en TODOS los templates
 @app.context_processor
 def datos_globales():
-    return {"TIPOS": TIPOS, "OCASIONES": OCASIONES}
+    return {"TIPOS": TIPOS, "OCASIONES": OCASIONES, "REMBG_DISPONIBLE": REMBG_DISPONIBLE}
 
 
 CARPETA_FOTOS = os.path.join("static", "uploads")
@@ -99,9 +107,31 @@ def es_foto_valida(foto):
     extension = os.path.splitext(foto.filename)[1].lower()
     return extension in EXTENSIONES_PERMITIDAS
 
-def guardar_foto(foto):
+def quitar_fondo(bytes_imagen):
+    # Recibe la imagen en bytes y devuelve un PNG sin fondo (o None si algo falla)
+    global sesion_rembg
+    if not REMBG_DISPONIBLE:
+        return None
+    try:
+        if sesion_rembg is None:
+            sesion_rembg = new_session("u2net")
+        return quitar_fondo_ia(bytes_imagen, session=sesion_rembg)
+    except Exception as error:
+        print("No se pudo quitar el fondo:", error)
+        return None
+
+def guardar_foto(foto, sin_fondo=False):
     # Guarda la foto con un nombre único y devuelve la ruta para la base de datos
-    nombre_archivo = uuid.uuid4().hex + "_" + secure_filename(foto.filename)
+    nombre_original = secure_filename(foto.filename)
+    if sin_fondo:
+        imagen_sin_fondo = quitar_fondo(foto.read())
+        if imagen_sin_fondo:
+            nombre_archivo = uuid.uuid4().hex + "_" + os.path.splitext(nombre_original)[0] + ".png"
+            with open(os.path.join(CARPETA_FOTOS, nombre_archivo), "wb") as archivo:
+                archivo.write(imagen_sin_fondo)
+            return "uploads/" + nombre_archivo
+        foto.seek(0)       # si falló, volvemos al inicio del archivo y guardamos la foto normal
+    nombre_archivo = uuid.uuid4().hex + "_" + nombre_original
     foto.save(os.path.join(CARPETA_FOTOS, nombre_archivo))
     return "uploads/" + nombre_archivo
 
@@ -190,7 +220,7 @@ def subir():
         if not es_foto_valida(foto):
             flash("⚠️ Elige una foto en formato JPG, PNG o WEBP")
             return redirect("/subir")
-        ruta_foto = guardar_foto(foto)
+        ruta_foto = guardar_foto(foto, sin_fondo="sin_fondo" in request.form)
 
         conexion = conectar()
         conexion.execute(
@@ -257,7 +287,7 @@ def editar(id):
                 conexion.close()
                 flash("⚠️ Elige una foto en formato JPG, PNG o WEBP")
                 return redirect(f"/editar/{id}")
-            ruta_foto = guardar_foto(foto_nueva)    # guardamos la nueva
+            ruta_foto = guardar_foto(foto_nueva, sin_fondo="sin_fondo" in request.form)    # guardamos la nueva
             borrar_foto_del_disco(prenda["foto"])   # y borramos la vieja
 
         conexion.execute(
@@ -347,6 +377,37 @@ def salir():
     session.clear()      # borramos los datos de la sesión
     flash("👋 Cerraste sesión. ¡Vuelve pronto!")
     return redirect("/entrar")
+
+
+@app.route("/quitar-fondo/<int:id>", methods=["POST"])
+def quitar_fondo_prenda(id):
+    # Quita el fondo de la foto de una prenda que YA estaba guardada
+    conexion = conectar()
+    prenda = conexion.execute(
+        "SELECT * FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])).fetchone()
+    if prenda is None or not prenda["foto"]:
+        conexion.close()
+        flash("⚠️ Esa prenda no tiene foto")
+        return redirect("/prendas")
+
+    ruta_vieja = os.path.join("static", prenda["foto"])
+    with open(ruta_vieja, "rb") as archivo:
+        imagen_sin_fondo = quitar_fondo(archivo.read())
+
+    if imagen_sin_fondo is None:
+        conexion.close()
+        flash("⚠️ No se pudo quitar el fondo. ¿Instalaste rembg?")
+        return redirect(f"/editar/{id}")
+
+    nombre_archivo = uuid.uuid4().hex + "_sin_fondo.png"
+    with open(os.path.join(CARPETA_FOTOS, nombre_archivo), "wb") as archivo:
+        archivo.write(imagen_sin_fondo)
+    conexion.execute("UPDATE prendas SET foto=? WHERE id=?", ("uploads/" + nombre_archivo, id))
+    conexion.commit()
+    conexion.close()
+    borrar_foto_del_disco(prenda["foto"])
+    flash("✂️ ¡Listo! Le quitamos el fondo a tu prenda")
+    return redirect(f"/editar/{id}")
 
 
 # ---------- Outfits ----------

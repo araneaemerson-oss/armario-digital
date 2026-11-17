@@ -9,6 +9,8 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 - 🔐 **Cuentas de usuario**: registro, inicio y cierre de sesión con contraseñas cifradas (hash)
 - 🙈 Cada usuario ve, edita y borra **solo su propia ropa**
 - 📸 Subir prendas con foto (con vista previa), tipo, color, ocasión y nombre opcional
+- ✂️ Quitar el fondo de las fotos automáticamente con IA (`rembg`)
+- 👔 Armar y guardar outfits combinando prendas
 - 🗂️ 11 categorías (camisas, vestidos, tacos, bolsos...) definidas en un solo lugar del código
 - 🏠 Inicio que se adapta a cada usuario: muestra solo las categorías que usa
 - 🔍 Filtros por tipo de prenda
@@ -26,9 +28,9 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 
 ## 🚀 Cómo ejecutarlo
 
-1. Instala Flask:
+1. Instala las librerías:
    ```
-   pip install flask
+   pip install -r requirements.txt
    ```
 2. Ejecuta la aplicación:
    ```
@@ -36,14 +38,14 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
    ```
 3. Abre en el navegador: http://127.0.0.1:5000
 
-La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la app.
+La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la app. La primera vez que quitas un fondo, `rembg` descarga su modelo de IA (unos 170 MB).
 
 ## 🗺️ Próximos pasos
 
 - [x] Borrar y editar prendas
 - [x] Cuentas de usuario
-- [ ] Armar y guardar outfits
-- [ ] Quitar el fondo de las fotos automáticamente
+- [x] Armar y guardar outfits
+- [x] Quitar el fondo de las fotos automáticamente
 - [ ] Probador: avatar con la foto del usuario para probar outfits
 - [ ] Publicar la app en internet
 

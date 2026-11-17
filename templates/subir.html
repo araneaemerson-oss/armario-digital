@@ -5,7 +5,8 @@
     <h1>Subir prenda</h1>
     <p class="subtitulo">Agrega una prenda nueva a tu armario.</p>
 
-    <form method="POST" enctype="multipart/form-data" class="subir-layout">
+    <form method="POST" enctype="multipart/form-data" class="subir-layout"
+          onsubmit="this.querySelector('button[type=submit]').textContent = '⏳ Guardando...'">
 
         <!-- Columna izquierda: la foto -->
         <label for="foto" class="zona-foto">

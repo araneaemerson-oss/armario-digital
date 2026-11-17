@@ -32,6 +32,13 @@
         </div>
     </form>
 
+    {% if prenda.foto and REMBG_DISPONIBLE %}
+        <form method="POST" action="/quitar-fondo/{{ prenda.id }}" class="form-quitar-fondo"
+              onsubmit="this.querySelector('button').textContent = '⏳ Quitando el fondo...'">
+            <button type="submit" class="boton boton-editar boton-grande">✂️ Quitar el fondo de esta foto</button>
+        </form>
+    {% endif %}
+
     <script>
         // Cuando eliges una foto nueva, la mostramos antes de guardarla
         const inputFoto = document.getElementById("foto");

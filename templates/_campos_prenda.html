@@ -26,6 +26,14 @@
     {% endfor %}
 </div>
 
+{% if REMBG_DISPONIBLE %}
+    <label class="interruptor">
+        <input type="checkbox" name="sin_fondo" {% if not prenda %}checked{% endif %}>
+        <span>✂️ Quitar el fondo de la {% if prenda %}nueva {% endif %}foto automáticamente</span>
+    </label>
+    <p class="ayuda">La primera vez tarda un poco, porque la IA se está preparando. ⏳</p>
+{% endif %}
+
 <label for="nombre">Nombre <span class="opcional">(opcional)</span></label>
 <input type="text" id="nombre" name="nombre" value="{{ prenda.nombre if prenda else '' }}" placeholder="Camisa">
 <p class="ayuda" id="ayuda-nombre">Si lo dejas vacío, se llamará <strong>Camisa</strong>.</p>
