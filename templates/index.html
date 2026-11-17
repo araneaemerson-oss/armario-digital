@@ -11,15 +11,39 @@
     </div>
 </section>
 
-<h2 class="titulo-seccion">Categorías</h2>
-<div class="categorias">
-    {% for tipo in TIPOS %}
-        <a href="/prendas?tipo={{ tipo.valor }}" class="categoria">
-            <span class="icono">{{ tipo.icono }}</span>
-            <span class="categoria-nombre">{{ tipo.plural }}</span>
-            <span class="categoria-numero">{{ conteo[tipo.valor] }} {% if conteo[tipo.valor] == 1 %}prenda{% else %}prendas{% endif %}</span>
-        </a>
-    {% endfor %}
-</div>
+<h2 class="titulo-seccion">Tus categorías</h2>
+
+{% if total > 0 %}
+    <!-- Solo las categorías donde SÍ tienes prendas -->
+    <div class="categorias">
+        {% for tipo in TIPOS %}
+            {% if conteo[tipo.valor] > 0 %}
+            <a href="/prendas?tipo={{ tipo.valor }}" class="categoria">
+                <span class="icono">{{ tipo.icono }}</span>
+                <span class="categoria-nombre">{{ tipo.plural }}</span>
+                <span class="categoria-numero">{{ conteo[tipo.valor] }} {% if conteo[tipo.valor] == 1 %}prenda{% else %}prendas{% endif %}</span>
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+{% else %}
+    <p class="vacio">Todavía no tienes prendas. <a href="/subir">¡Sube la primera!</a> 📸</p>
+{% endif %}
+
+<!-- Las demás categorías, escondidas hasta que hagas clic -->
+<details class="mas-categorias">
+    <summary>Ver todas las categorías</summary>
+    <div class="categorias">
+        {% for tipo in TIPOS %}
+            {% if conteo[tipo.valor] == 0 %}
+            <a href="/prendas?tipo={{ tipo.valor }}" class="categoria">
+                <span class="icono">{{ tipo.icono }}</span>
+                <span class="categoria-nombre">{{ tipo.plural }}</span>
+                <span class="categoria-numero">{{ conteo[tipo.valor] }} {% if conteo[tipo.valor] == 1 %}prenda{% else %}prendas{% endif %}</span>
+            </a>
+            {% endif %}
+        {% endfor %}
+    </div>
+</details>
 
 {% endblock %}

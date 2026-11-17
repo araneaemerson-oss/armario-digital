@@ -541,3 +541,35 @@ a{
 .nav-links a.nav-boton:hover {
     background-color: #1F4038;
 }
+
+
+/* ---------- Inicio: ver todas las categorías ---------- */
+.mas-categorias {
+    margin-top: 24px;
+}
+.mas-categorias summary {
+    display: inline-block;
+    padding: 10px 18px;
+    border-radius: 999px;
+    border: 1px solid #D6D1C7;
+    background-color: #FFFFFF;
+    font-weight: 700;
+    cursor: pointer;
+    list-style: none;
+    margin-bottom: 16px;
+}
+.mas-categorias summary::-webkit-details-marker {
+    display: none;
+}
+.mas-categorias summary::after {
+    content: " ▾";
+}
+.mas-categorias[open] summary::after {
+    content: " ▴";
+}
+.mas-categorias summary:hover {
+    background-color: #E3ECE8;
+}
+.mas-categorias .categoria {
+    opacity: 0.75;
+}
