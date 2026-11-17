@@ -4,13 +4,13 @@ import os, uuid
 from werkzeug.utils import secure_filename
 import sqlite3 
 
+import importlib.util
+
 # rembg quita el fondo de las fotos con IA. Si no está instalado, la app sigue funcionando igual.
-try:
-    from rembg import remove as quitar_fondo_ia, new_session
-    REMBG_DISPONIBLE = True
-except ImportError:
-    REMBG_DISPONIBLE = False
-sesion_rembg = None      # el modelo de IA se carga la primera vez que se usa (tarda un poco)
+# Solo REVISAMOS si está instalado (es rapidísimo). Lo cargamos de verdad la primera vez que se usa,
+# porque cargarlo tarda bastante y no queremos que la app demore en arrancar.
+REMBG_DISPONIBLE = importlib.util.find_spec("rembg") is not None
+sesion_rembg = None
 
 
 def conectar():
@@ -113,9 +113,10 @@ def quitar_fondo(bytes_imagen):
     if not REMBG_DISPONIBLE:
         return None
     try:
+        from rembg import remove, new_session      # se carga aquí, solo cuando hace falta
         if sesion_rembg is None:
             sesion_rembg = new_session("u2net")
-        return quitar_fondo_ia(bytes_imagen, session=sesion_rembg)
+        return remove(bytes_imagen, session=sesion_rembg)
     except Exception as error:
         print("No se pudo quitar el fondo:", error)
         return None
