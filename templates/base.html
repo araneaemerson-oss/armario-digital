@@ -19,7 +19,7 @@
                 <a href="/prendas" class="{% if request.path == '/prendas' or request.path.startswith('/editar') %}activo{% endif %}">Mis Prendas</a>
                 <a href="/subir" class="{% if request.path == '/subir' %}activo{% endif %}">Subir prenda</a>
                 <a href="#">Probador</a>
-                <span class="nav-usuario">👋 {{ session.usuario_nombre }}</span>
+                <span class="nav-usuario">👋 {{ session.usuario_nombre|title }}</span>
                 <a href="/salir">Salir</a>
             {% endif %}
         </div>

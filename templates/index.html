@@ -2,7 +2,7 @@
 {% block contenido %}
 
 <section class="hero">
-    <p class="saludo">Hola{% if session.usuario_nombre %}, {{ session.usuario_nombre }}{% endif %} 👋</p>
+    <p class="saludo">Hola{% if session.usuario_nombre %}, {{ session.usuario_nombre|title }}{% endif %} 👋</p>
     <h1>¿Qué te pones hoy?</h1>
     <p class="subtitulo">Tienes <strong>{{ total }}</strong> {% if total == 1 %}prenda{% else %}prendas{% endif %} en tu armario.</p>
     <div class="hero-botones">

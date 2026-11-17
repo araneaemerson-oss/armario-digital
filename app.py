@@ -123,8 +123,15 @@ def prendas():
     else:
         lista_prendas = conexion.execute(
             "SELECT * FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)).fetchall()
+
+    # ¿Qué tipos de prenda tiene este usuario? (DISTINCT = sin repetir)
+    tipos_usados = []
+    for fila in conexion.execute(
+            "SELECT DISTINCT tipo FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)).fetchall():
+        tipos_usados.append(fila["tipo"])
+
     conexion.close()
-    return render_template("prendas.html" , prendas=lista_prendas, tipo_actual=tipo)
+    return render_template("prendas.html" , prendas=lista_prendas, tipo_actual=tipo, tipos_usados=tipos_usados)
 
 
 @app.route("/subir", methods=["GET","POST"])
@@ -212,7 +219,7 @@ def registro():
     if "usuario_id" in session:
         return redirect("/")
     if request.method=="POST":
-        nombre = request.form["nombre"].strip()
+        nombre = request.form["nombre"].strip().title()     # "fabricio aranea" → "Fabricio Aranea"
         correo = request.form["correo"].strip().lower()
         contrasena = request.form["contrasena"]
 

@@ -12,7 +12,9 @@
     <div class="filtros">
         <a href="/prendas" class="{% if not tipo_actual %}activo{% endif %}">Todas</a>
         {% for tipo in TIPOS %}
-            <a href="/prendas?tipo={{ tipo.valor }}" class="{% if tipo_actual == tipo.valor %}activo{% endif %}">{{ tipo.plural }}</a>
+            {% if tipo.valor in tipos_usados or tipo.valor == tipo_actual %}
+                <a href="/prendas?tipo={{ tipo.valor }}" class="{% if tipo_actual == tipo.valor %}activo{% endif %}">{{ tipo.icono }} {{ tipo.plural }}</a>
+            {% endif %}
         {% endfor %}
     </div>
     {% if prendas %}
