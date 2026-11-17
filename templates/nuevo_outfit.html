@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <h1>Armar outfit</h1>
+    <p class="subtitulo">Elige las prendas que quieres combinar (mínimo 2).</p>
+
+    {% if prendas|length < 2 %}
+        <p class="vacio">Necesitas al menos 2 prendas para armar un outfit. <a href="/subir">¡Sube más ropa!</a> 📸</p>
+    {% else %}
+    <form method="POST" class="outfit-form">
+        <div class="outfit-elegir">
+            {% for tipo in TIPOS %}
+                {% set del_tipo = prendas|selectattr("tipo", "equalto", tipo.valor)|list %}
+                {% if del_tipo %}
+                    <h2 class="titulo-grupo">{{ tipo.icono }} {{ tipo.plural }}</h2>
+                    <div class="elegir-grilla">
+                        {% for prenda in del_tipo %}
+                            <label class="elegir-prenda">
+                                <input type="checkbox" name="prendas" value="{{ prenda.id }}">
+                                <span class="elegir-tarjeta">
+                                    {% if prenda.foto %}
+                                        <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
+                                    {% else %}
+                                        <span class="sin-foto mini">👕</span>
+                                    {% endif %}
+                                    <span class="elegir-nombre">{{ prenda.nombre }}</span>
+                                    <span class="check">✓</span>
+                                </span>
+                            </label>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <div class="formulario outfit-datos">
+            <p class="contador" id="contador">0 prendas elegidas</p>
+
+            <span class="etiqueta">Ocasión</span>
+            <div class="chips">
+                {% for opcion in OCASIONES %}
+                    <label class="chip">
+                        <input type="radio" name="ocasion" value="{{ opcion }}" {% if loop.first %}checked{% endif %}>
+                        <span>{{ opcion }}</span>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <label for="nombre">Nombre <span class="opcional">(opcional)</span></label>
+            <input type="text" id="nombre" name="nombre" placeholder="Ej.: Para el viernes">
+
+            <button type="submit">Guardar outfit</button>
+            <a href="/outfits" class="cancelar">Cancelar</a>
+        </div>
+    </form>
+
+    <script>
+        // Contamos cuántas prendas vas eligiendo
+        const casillas = document.querySelectorAll('input[name="prendas"]');
+        function contar() {
+            let elegidas = 0;
+            casillas.forEach(function (c) { if (c.checked) { elegidas += 1; } });
+            document.getElementById("contador").textContent =
+                elegidas + (elegidas === 1 ? " prenda elegida" : " prendas elegidas");
+        }
+        casillas.forEach(function (c) { c.addEventListener("change", contar); });
+    </script>
+    {% endif %}
+{% endblock %}

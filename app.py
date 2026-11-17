@@ -29,6 +29,21 @@ def crear_tabla():
         contrasena_hash TEXT)
         """)
 
+    # Outfits: un conjunto de prendas con nombre y ocasión
+    conexion.execute("""
+        CREATE TABLE IF NOT EXISTS outfits(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT,
+        ocasion TEXT,
+        usuario_id INTEGER REFERENCES usuarios(id))
+        """)
+    # Tabla "puente": qué prendas tiene cada outfit (relación muchos a muchos)
+    conexion.execute("""
+        CREATE TABLE IF NOT EXISTS outfit_prendas(
+        outfit_id INTEGER REFERENCES outfits(id),
+        prenda_id INTEGER REFERENCES prendas(id))
+        """)
+
     # Si la tabla prendas todavía no tiene la columna usuario_id, la agregamos
     columnas = []
     for columna in conexion.execute("PRAGMA table_info(prendas)").fetchall():
@@ -202,6 +217,9 @@ def borrar(id):
     conexion = conectar()
     prenda = conexion.execute(
         "SELECT foto FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])).fetchone()
+    if prenda:
+        # también la sacamos de los outfits donde estaba
+        conexion.execute("DELETE FROM outfit_prendas WHERE prenda_id=?", (id,))
     conexion.execute(
         "DELETE FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])
     )
@@ -329,6 +347,86 @@ def salir():
     session.clear()      # borramos los datos de la sesión
     flash("👋 Cerraste sesión. ¡Vuelve pronto!")
     return redirect("/entrar")
+
+
+# ---------- Outfits ----------
+@app.route("/outfits")
+def outfits():
+    conexion = conectar()
+    lista_outfits = conexion.execute(
+        "SELECT * FROM outfits WHERE usuario_id = ? ORDER BY id DESC", (session["usuario_id"],)).fetchall()
+
+    outfits_con_prendas = []
+    for outfit in lista_outfits:
+        # JOIN: unimos outfit_prendas con prendas para traer los datos de cada prenda
+        prendas_del_outfit = conexion.execute("""
+            SELECT prendas.* FROM prendas
+            JOIN outfit_prendas ON prendas.id = outfit_prendas.prenda_id
+            WHERE outfit_prendas.outfit_id = ?
+            """, (outfit["id"],)).fetchall()
+        outfits_con_prendas.append({"outfit": outfit, "prendas": prendas_del_outfit})
+
+    conexion.close()
+    return render_template("outfits.html", outfits=outfits_con_prendas)
+
+
+@app.route("/outfits/nuevo", methods=["GET","POST"])
+def nuevo_outfit():
+    conexion = conectar()
+    mis_prendas = conexion.execute(
+        "SELECT * FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)).fetchall()
+
+    if request.method=="POST":
+        ocasion = request.form.get("ocasion", "")
+        nombre = request.form.get("nombre", "").strip()
+        ids_elegidos = request.form.getlist("prendas")     # getlist: trae TODAS las casillas marcadas
+
+        # Solo aceptamos prendas que sean de este usuario
+        ids_mios = []
+        for prenda in mis_prendas:
+            ids_mios.append(str(prenda["id"]))
+        ids_validos = []
+        for prenda_id in ids_elegidos:
+            if prenda_id in ids_mios:
+                ids_validos.append(int(prenda_id))
+
+        if len(ids_validos) < 2:
+            conexion.close()
+            flash("⚠️ Elige al menos 2 prendas para armar un outfit")
+            return redirect("/outfits/nuevo")
+        if ocasion not in OCASIONES:
+            ocasion = OCASIONES[0]
+        if nombre == "":
+            nombre = "Outfit " + ocasion.lower()
+
+        cursor = conexion.execute(
+            "INSERT INTO outfits (nombre, ocasion, usuario_id) VALUES (?, ?, ?)",
+            (nombre, ocasion, session["usuario_id"]))
+        outfit_id = cursor.lastrowid
+        for prenda_id in ids_validos:
+            conexion.execute(
+                "INSERT INTO outfit_prendas (outfit_id, prenda_id) VALUES (?, ?)", (outfit_id, prenda_id))
+        conexion.commit()
+        conexion.close()
+        flash("👔 Outfit guardado")
+        return redirect("/outfits")
+
+    conexion.close()
+    return render_template("nuevo_outfit.html", prendas=mis_prendas)
+
+
+@app.route("/outfits/borrar/<int:id>", methods=["POST"])
+def borrar_outfit(id):
+    conexion = conectar()
+    outfit = conexion.execute(
+        "SELECT id FROM outfits WHERE id=? AND usuario_id=?", (id, session["usuario_id"])).fetchone()
+    if outfit:
+        conexion.execute("DELETE FROM outfit_prendas WHERE outfit_id=?", (id,))
+        conexion.execute("DELETE FROM outfits WHERE id=?", (id,))
+        conexion.commit()
+        flash("🗑️ Outfit borrado")
+    conexion.close()
+    return redirect("/outfits")
 
 
 @app.route("/probador")

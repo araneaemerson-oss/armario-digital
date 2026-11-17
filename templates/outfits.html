@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <div class="encabezado">
+        <div>
+            <h1>Mis Outfits</h1>
+            <p class="subtitulo">Tus combinaciones favoritas, listas para usar.</p>
+        </div>
+        <a href="/outfits/nuevo" class="boton boton-principal boton-grande">+ Armar outfit</a>
+    </div>
+
+    {% if outfits %}
+        <div class="grilla-outfits">
+            {% for item in outfits %}
+                <div class="tarjeta outfit">
+                    <div class="outfit-fotos">
+                        {% for prenda in item.prendas %}
+                            {% if prenda.foto %}
+                                <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}" title="{{ prenda.nombre }}">
+                            {% else %}
+                                <div class="sin-foto mini">👕</div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                    <h2>{{ item.outfit.nombre }}</h2>
+                    <p>{{ item.outfit.ocasion }} · {{ item.prendas|length }} {% if item.prendas|length == 1 %}prenda{% else %}prendas{% endif %}</p>
+                    <p class="outfit-lista">
+                        {% for prenda in item.prendas %}{{ prenda.nombre }}{% if not loop.last %} + {% endif %}{% endfor %}
+                    </p>
+                    <div class="acciones">
+                        <form method="POST" action="/outfits/borrar/{{ item.outfit.id }}" onsubmit="return confirm('¿Seguro que quieres borrar este outfit? Tus prendas no se borran.')">
+                            <button type="submit" class="boton boton-borrar">Borrar</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p class="vacio">Todavía no tienes outfits. <a href="/outfits/nuevo">¡Arma el primero!</a> 👔👖👟</p>
+    {% endif %}
+{% endblock %}
