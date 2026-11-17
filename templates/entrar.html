@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <div class="auth">
+        <h1>Entrar</h1>
+        <p class="subtitulo">Qué bueno verte de nuevo. 👋</p>
+
+        <form method="POST" class="formulario">
+            <label for="correo">Correo</label>
+            <input type="email" id="correo" name="correo" value="{{ correo or '' }}" placeholder="tucorreo@ejemplo.com" required>
+
+            <label for="contrasena">Contraseña</label>
+            <input type="password" id="contrasena" name="contrasena" required>
+
+            <button type="submit">Entrar</button>
+            <p class="auth-pie">¿No tienes cuenta? <a href="/registro">Créala aquí</a></p>
+        </form>
+    </div>
+{% endblock %}

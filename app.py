@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, session
+from werkzeug.security import generate_password_hash, check_password_hash
 import os, uuid
 from werkzeug.utils import secure_filename
 import sqlite3 
@@ -20,6 +21,21 @@ def crear_tabla():
         ocasion TEXT,
         foto TEXT)
         """)
+    conexion.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        nombre TEXT,
+        correo TEXT UNIQUE,
+        contrasena_hash TEXT)
+        """)
+
+    # Si la tabla prendas todavía no tiene la columna usuario_id, la agregamos
+    columnas = []
+    for columna in conexion.execute("PRAGMA table_info(prendas)").fetchall():
+        columnas.append(columna["name"])
+    if "usuario_id" not in columnas:
+        conexion.execute("ALTER TABLE prendas ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)")
+
     conexion.commit()
     conexion.close()
 
@@ -71,11 +87,21 @@ def borrar_foto_del_disco(ruta_foto):
             os.remove(ruta_completa)
 
 
+# ---------- Proteger las páginas: hay que iniciar sesión ----------
+PAGINAS_LIBRES = ["entrar", "registro", "static"]
+
+@app.before_request
+def pedir_inicio_de_sesion():
+    # Esto se ejecuta ANTES de cada página
+    if request.endpoint not in PAGINAS_LIBRES and "usuario_id" not in session:
+        return redirect("/entrar")
+
+
 @app.route("/")
 def inicio():
     conexion = conectar()
     lista_prendas =  conexion.execute(
-        "SELECT * FROM prendas"
+        "SELECT * FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)
     ).fetchall()
     conexion.close()
     conteo = {}
@@ -92,9 +118,11 @@ def prendas():
     conexion = conectar()
 
     if tipo:
-        lista_prendas = conexion.execute("SELECT * FROM prendas WHERE tipo = ?",(tipo,)).fetchall()
+        lista_prendas = conexion.execute(
+            "SELECT * FROM prendas WHERE usuario_id = ? AND tipo = ?", (session["usuario_id"], tipo)).fetchall()
     else:
-        lista_prendas = conexion.execute("SELECT * FROM prendas").fetchall()
+        lista_prendas = conexion.execute(
+            "SELECT * FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)).fetchall()
     conexion.close()
     return render_template("prendas.html" , prendas=lista_prendas, tipo_actual=tipo)
 
@@ -106,13 +134,14 @@ def subir():
 
         conexion = conectar()
         conexion.execute(
-            "INSERT INTO prendas (nombre, tipo, color, ocasion, foto) VALUES (?, ?, ?, ?, ?)",
+            "INSERT INTO prendas (nombre, tipo, color, ocasion, foto, usuario_id) VALUES (?, ?, ?, ?, ?, ?)",
             (
                 request.form["nombre"].strip(),
                 request.form["tipo"],
                 request.form["color"].strip().capitalize(),
                 request.form["ocasion"],
-                ruta_foto
+                ruta_foto,
+                session["usuario_id"]       # 👤 la prenda es de quien inició sesión
             )
         )
         conexion.commit()
@@ -126,9 +155,10 @@ def subir():
 @app.route("/borrar/<int:id>", methods=["POST"])
 def borrar(id):
     conexion = conectar()
-    prenda = conexion.execute("SELECT foto FROM prendas WHERE id=?", (id,)).fetchone()
+    prenda = conexion.execute(
+        "SELECT foto FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])).fetchone()
     conexion.execute(
-        "DELETE FROM prendas WHERE id=?", (id,)
+        "DELETE FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])
     )
     conexion.commit()
     conexion.close()
@@ -143,7 +173,7 @@ def borrar(id):
 def editar(id):
     conexion = conectar()
     prenda = conexion.execute(
-        "SELECT * FROM prendas WHERE id=?",(id,)).fetchone()
+        "SELECT * FROM prendas WHERE id=? AND usuario_id=?",(id, session["usuario_id"])).fetchone()
 
     if prenda is None:
         conexion.close()
@@ -175,6 +205,76 @@ def editar(id):
     return render_template("editar.html", prenda=prenda)
     
         
+
+# ---------- Usuarios: registro, entrar y salir ----------
+@app.route("/registro", methods=["GET","POST"])
+def registro():
+    if "usuario_id" in session:
+        return redirect("/")
+    if request.method=="POST":
+        nombre = request.form["nombre"].strip()
+        correo = request.form["correo"].strip().lower()
+        contrasena = request.form["contrasena"]
+
+        if len(contrasena) < 6:
+            flash("⚠️ La contraseña debe tener al menos 6 caracteres")
+            return render_template("registro.html", nombre=nombre, correo=correo)
+
+        conexion = conectar()
+        try:
+            cursor = conexion.execute(
+                "INSERT INTO usuarios (nombre, correo, contrasena_hash) VALUES (?, ?, ?)",
+                (nombre, correo, generate_password_hash(contrasena))   # 🔐 guardamos el hash, nunca la contraseña
+            )
+            # Si eres el PRIMER usuario, te quedas con las prendas que ya existían sin dueño
+            if cursor.lastrowid == conexion.execute("SELECT MIN(id) FROM usuarios").fetchone()[0]:
+                conexion.execute("UPDATE prendas SET usuario_id = ? WHERE usuario_id IS NULL", (cursor.lastrowid,))
+            conexion.commit()
+        except sqlite3.IntegrityError:          # pasa cuando el correo ya existe (por el UNIQUE)
+            conexion.close()
+            flash("⚠️ Ya existe una cuenta con ese correo")
+            return render_template("registro.html", nombre=nombre, correo=correo)
+        conexion.close()
+
+        # Al crear la cuenta, la dejamos con la sesión iniciada
+        session["usuario_id"] = cursor.lastrowid
+        session["usuario_nombre"] = nombre
+        flash(f"🎉 ¡Bienvenido, {nombre}! Tu cuenta fue creada")
+        return redirect("/")
+
+    return render_template("registro.html")
+
+
+@app.route("/entrar", methods=["GET","POST"])
+def entrar():
+    if "usuario_id" in session:
+        return redirect("/")
+    if request.method=="POST":
+        correo = request.form["correo"].strip().lower()
+        contrasena = request.form["contrasena"]
+
+        conexion = conectar()
+        usuario = conexion.execute("SELECT * FROM usuarios WHERE correo = ?", (correo,)).fetchone()
+        conexion.close()
+
+        if usuario and check_password_hash(usuario["contrasena_hash"], contrasena):
+            session["usuario_id"] = usuario["id"]
+            session["usuario_nombre"] = usuario["nombre"]
+            flash(f"👋 ¡Hola de nuevo, {usuario['nombre']}!")
+            return redirect("/")
+
+        flash("⚠️ Correo o contraseña incorrectos")
+        return render_template("entrar.html", correo=correo)
+
+    return render_template("entrar.html")
+
+
+@app.route("/salir")
+def salir():
+    session.clear()      # borramos los datos de la sesión
+    flash("👋 Cerraste sesión. ¡Vuelve pronto!")
+    return redirect("/entrar")
+
 
 crear_tabla()
 app.run(debug=True)

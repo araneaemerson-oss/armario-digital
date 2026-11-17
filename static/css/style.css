@@ -508,3 +508,36 @@ a{
     font-weight: 700;
     color: #5C5A55;
 }
+
+
+/* ---------- Registro y Entrar ---------- */
+.auth {
+    max-width: 440px;
+    margin: 0 auto;
+}
+.auth .formulario {
+    max-width: none;
+}
+.auth-pie {
+    text-align: center;
+    margin: 8px 0 0;
+    font-size: 14px;
+    color: #5C5A55;
+}
+
+/* ---------- Menú: usuario ---------- */
+.nav-links {
+    align-items: center;
+}
+.nav-usuario {
+    padding: 10px 6px 10px 14px;
+    font-weight: 700;
+    color: #1A1A1A;
+}
+.nav-links a.nav-boton {
+    background-color: #2F5D50;
+    color: #FFFFFF;
+}
+.nav-links a.nav-boton:hover {
+    background-color: #1F4038;
+}
