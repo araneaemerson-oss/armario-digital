@@ -573,3 +573,33 @@ a{
 .mas-categorias .categoria {
     opacity: 0.75;
 }
+
+
+/* ---------- Formulario: nombre opcional ---------- */
+.opcional {
+    font-weight: 400;
+    color: #8A867E;
+}
+.ayuda {
+    margin: 0;
+    font-size: 13px;
+    color: #5C5A55;
+}
+
+/* ---------- Probador y página 404 ---------- */
+.proximamente {
+    text-align: center;
+}
+.proximamente .hero-botones {
+    justify-content: center;
+}
+.etiqueta-proximamente {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background-color: #FFF4D6;
+    color: #7A5A00;
+    font-weight: 700;
+    font-size: 14px;
+    margin: 0 0 24px;
+}

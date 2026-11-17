@@ -72,6 +72,17 @@ def datos_globales():
 CARPETA_FOTOS = os.path.join("static", "uploads")
 os.makedirs(CARPETA_FOTOS, exist_ok=True)
 
+# Solo aceptamos fotos, y de máximo 10 MB
+EXTENSIONES_PERMITIDAS = [".jpg", ".jpeg", ".png", ".webp", ".gif"]
+app.config["MAX_CONTENT_LENGTH"] = 10 * 1024 * 1024
+
+
+def es_foto_valida(foto):
+    # ¿Llegó un archivo y termina en .jpg, .png, etc.?
+    if foto is None or foto.filename == "":
+        return False
+    extension = os.path.splitext(foto.filename)[1].lower()
+    return extension in EXTENSIONES_PERMITIDAS
 
 def guardar_foto(foto):
     # Guarda la foto con un nombre único y devuelve la ruta para la base de datos
@@ -95,6 +106,24 @@ def pedir_inicio_de_sesion():
     # Esto se ejecuta ANTES de cada página
     if request.endpoint not in PAGINAS_LIBRES and "usuario_id" not in session:
         return redirect("/entrar")
+
+
+def leer_formulario_prenda():
+    # Lee los datos del formulario (Subir y Editar usan este mismo código ♻️)
+    tipo = request.form.get("tipo", "")
+    ocasion = request.form.get("ocasion", "")
+    color = request.form.get("color", "").strip().capitalize()
+    nombre = request.form.get("nombre", "").strip()
+
+    tipos_validos = []
+    for t in TIPOS:
+        tipos_validos.append(t["valor"])
+    if tipo not in tipos_validos or ocasion not in OCASIONES:
+        return None                       # alguien mandó datos raros
+
+    if nombre == "":                      # nombre opcional: lo armamos solos
+        nombre = tipo + " " + color.lower()
+    return {"nombre": nombre, "tipo": tipo, "color": color, "ocasion": ocasion}
 
 
 @app.route("/")
@@ -137,16 +166,25 @@ def prendas():
 @app.route("/subir", methods=["GET","POST"])
 def subir():
     if request.method=="POST":
-        ruta_foto = guardar_foto(request.files["foto"])
+        datos = leer_formulario_prenda()
+        if datos is None:
+            flash("⚠️ Revisa el tipo y la ocasión de la prenda")
+            return redirect("/subir")
+
+        foto = request.files.get("foto")
+        if not es_foto_valida(foto):
+            flash("⚠️ Elige una foto en formato JPG, PNG o WEBP")
+            return redirect("/subir")
+        ruta_foto = guardar_foto(foto)
 
         conexion = conectar()
         conexion.execute(
             "INSERT INTO prendas (nombre, tipo, color, ocasion, foto, usuario_id) VALUES (?, ?, ?, ?, ?, ?)",
             (
-                request.form["nombre"].strip(),
-                request.form["tipo"],
-                request.form["color"].strip().capitalize(),
-                request.form["ocasion"],
+                datos["nombre"],
+                datos["tipo"],
+                datos["color"],
+                datos["ocasion"],
                 ruta_foto,
                 session["usuario_id"]       # 👤 la prenda es de quien inició sesión
             )
@@ -188,18 +226,28 @@ def editar(id):
         return redirect("/prendas")
 
     if request.method=="POST":
+        datos = leer_formulario_prenda()
+        if datos is None:
+            conexion.close()
+            flash("⚠️ Revisa el tipo y la ocasión de la prenda")
+            return redirect(f"/editar/{id}")
+
         ruta_foto = prenda["foto"]          # por defecto se queda la foto de antes
         foto_nueva = request.files.get("foto")
         if foto_nueva and foto_nueva.filename != "":
+            if not es_foto_valida(foto_nueva):
+                conexion.close()
+                flash("⚠️ Elige una foto en formato JPG, PNG o WEBP")
+                return redirect(f"/editar/{id}")
             ruta_foto = guardar_foto(foto_nueva)    # guardamos la nueva
             borrar_foto_del_disco(prenda["foto"])   # y borramos la vieja
 
         conexion.execute(
             "UPDATE prendas SET nombre = ?, tipo = ?, color = ?, ocasion = ?, foto = ? WHERE id = ?",
-            (   request.form["nombre"].strip(),
-                request.form["tipo"],
-                request.form["color"].strip().capitalize(),
-                request.form["ocasion"],
+            (   datos["nombre"],
+                datos["tipo"],
+                datos["color"],
+                datos["ocasion"],
                 ruta_foto,
                 id)
             )
@@ -281,6 +329,22 @@ def salir():
     session.clear()      # borramos los datos de la sesión
     flash("👋 Cerraste sesión. ¡Vuelve pronto!")
     return redirect("/entrar")
+
+
+@app.route("/probador")
+def probador():
+    return render_template("probador.html")
+
+
+# ---------- Páginas de error ----------
+@app.errorhandler(404)
+def pagina_no_encontrada(error):
+    return render_template("404.html"), 404
+
+@app.errorhandler(413)
+def archivo_muy_grande(error):
+    flash("⚠️ La foto es muy pesada. El máximo es 10 MB")
+    return redirect(request.path)
 
 
 crear_tabla()

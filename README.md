@@ -6,15 +6,23 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 
 ## ✨ Funcionalidades
 
-- 📸 Subir prendas con foto, nombre, tipo, color y ocasión
-- 👕 Ver todas tus prendas en tarjetas, en una grilla que se adapta a cualquier pantalla
-- 💾 Las prendas se guardan en una base de datos y no se borran al apagar la app
+- 🔐 **Cuentas de usuario**: registro, inicio y cierre de sesión con contraseñas cifradas (hash)
+- 🙈 Cada usuario ve, edita y borra **solo su propia ropa**
+- 📸 Subir prendas con foto (con vista previa), tipo, color, ocasión y nombre opcional
+- 🗂️ 11 categorías (camisas, vestidos, tacos, bolsos...) definidas en un solo lugar del código
+- 🏠 Inicio que se adapta a cada usuario: muestra solo las categorías que usa
+- 🔍 Filtros por tipo de prenda
+- ✏️ Editar prendas, incluida la foto, y 🗑️ borrarlas con confirmación
+- 🧹 Las fotos viejas se borran del disco automáticamente
+- 💬 Mensajes de confirmación y validación de datos (formato y tamaño de la foto)
+- 📱 Diseño responsive: se ve bien en computadora y en celular
 
 ## 🛠️ Tecnologías
 
 - **Python** y **Flask** (backend)
 - **HTML**, **CSS** y **Jinja** (frontend y plantillas)
-- **SQLite** y **SQL** (base de datos)
+- **SQLite** y **SQL** (base de datos con tablas relacionadas)
+- **JavaScript** (vista previa de fotos y nombre sugerido)
 
 ## 🚀 Cómo ejecutarlo
 
@@ -32,11 +40,16 @@ La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la ap
 
 ## 🗺️ Próximos pasos
 
-- [ ] Borrar y editar prendas
+- [x] Borrar y editar prendas
+- [x] Cuentas de usuario
 - [ ] Armar y guardar outfits
 - [ ] Quitar el fondo de las fotos automáticamente
-- [ ] Avatar con la foto del usuario para probar outfits
-- [ ] Cuentas de usuario
+- [ ] Probador: avatar con la foto del usuario para probar outfits
+- [ ] Publicar la app en internet
+
+## 🤖 Uso de IA
+
+Desarrollado con apoyo de IA (Claude) como tutor: la usé para aprender los conceptos y revisar mi código, que fui escribiendo y corrigiendo yo mismo.
 
 ## 👤 Autor
 

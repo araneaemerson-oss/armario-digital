@@ -25,31 +25,7 @@
 
         <!-- Columna derecha: los datos -->
         <div class="formulario subir-campos">
-            <label for="nombre">Nombre de la prenda</label>
-            <input type="text" id="nombre" name="nombre" value="{{ prenda.nombre }}" required>
-
-            <span class="etiqueta">Tipo</span>
-            <div class="chips">
-                {% for tipo in TIPOS %}
-                    <label class="chip">
-                        <input type="radio" name="tipo" value="{{ tipo.valor }}" {% if tipo.valor == prenda.tipo %}checked{% endif %}>
-                        <span>{{ tipo.icono }} {{ tipo.valor }}</span>
-                    </label>
-                {% endfor %}
-            </div>
-
-            <label for="color">Color</label>
-            <input type="text" id="color" name="color" value="{{ prenda.color }}" required>
-
-            <span class="etiqueta">Ocasión</span>
-            <div class="chips">
-                {% for opcion in OCASIONES %}
-                    <label class="chip">
-                        <input type="radio" name="ocasion" value="{{ opcion }}" {% if opcion == prenda.ocasion %}checked{% endif %}>
-                        <span>{{ opcion }}</span>
-                    </label>
-                {% endfor %}
-            </div>
+            {% include "_campos_prenda.html" %}
 
             <button type="submit">Guardar cambios</button>
             <a href="/prendas" class="cancelar">Cancelar</a>

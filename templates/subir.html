@@ -20,31 +20,8 @@
 
         <!-- Columna derecha: los datos -->
         <div class="formulario subir-campos">
-            <label for="nombre">Nombre de la prenda</label>
-            <input type="text" id="nombre" name="nombre" placeholder="Ej.: camisa azul" required>
-
-            <span class="etiqueta">Tipo</span>
-            <div class="chips">
-                {% for tipo in TIPOS %}
-                    <label class="chip">
-                        <input type="radio" name="tipo" value="{{ tipo.valor }}" {% if loop.first %}checked{% endif %}>
-                        <span>{{ tipo.icono }} {{ tipo.valor }}</span>
-                    </label>
-                {% endfor %}
-            </div>
-
-            <label for="color">Color</label>
-            <input type="text" id="color" name="color" placeholder="Ej.: azul" required>
-
-            <span class="etiqueta">Ocasión</span>
-            <div class="chips">
-                {% for opcion in OCASIONES %}
-                    <label class="chip">
-                        <input type="radio" name="ocasion" value="{{ opcion }}" {% if loop.first %}checked{% endif %}>
-                        <span>{{ opcion }}</span>
-                    </label>
-                {% endfor %}
-            </div>
+            {% set prenda = None %}
+            {% include "_campos_prenda.html" %}
 
             <button type="submit">Guardar prenda</button>
         </div>
