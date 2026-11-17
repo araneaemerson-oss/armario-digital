@@ -29,6 +29,30 @@ app = Flask(__name__)
 # Más adelante, cuando subamos la app a internet, la pasaremos al archivo .env
 app.secret_key = os.environ.get("SECRET_KEY", "clave-de-desarrollo-armario")
 
+# ---------- Listas de opciones (en UN solo lugar) ----------
+# Para agregar un tipo nuevo, solo agrega una línea aquí 👇
+TIPOS = [
+    {"valor": "Camisa",     "plural": "Camisas",     "icono": "👕"},
+    {"valor": "Blusa",      "plural": "Blusas",      "icono": "👚"},
+    {"valor": "Pantalón",   "plural": "Pantalones",  "icono": "👖"},
+    {"valor": "Short",      "plural": "Shorts",      "icono": "🩳"},
+    {"valor": "Vestido",    "plural": "Vestidos",    "icono": "👗"},
+    {"valor": "Falda",      "plural": "Faldas",      "icono": "🎀"},
+    {"valor": "Chaqueta",   "plural": "Chaquetas",   "icono": "🧥"},
+    {"valor": "Zapatos",    "plural": "Zapatos",     "icono": "👟"},
+    {"valor": "Tacos",      "plural": "Tacos",       "icono": "👠"},
+    {"valor": "Bolso",      "plural": "Bolsos",      "icono": "👜"},
+    {"valor": "Accesorios", "plural": "Accesorios",  "icono": "🧢"},
+]
+OCASIONES = ["Casual", "Formal", "Fiesta", "Deporte"]
+
+
+# Esto hace que TIPOS y OCASIONES se puedan usar en TODOS los templates
+@app.context_processor
+def datos_globales():
+    return {"TIPOS": TIPOS, "OCASIONES": OCASIONES}
+
+
 CARPETA_FOTOS = os.path.join("static", "uploads")
 os.makedirs(CARPETA_FOTOS, exist_ok=True)
 
@@ -54,9 +78,12 @@ def inicio():
         "SELECT * FROM prendas"
     ).fetchall()
     conexion.close()
-    conteo = {"Camisa": 0, "Pantalón": 0, "Zapatos": 0, "Accesorios": 0}
+    conteo = {}
+    for tipo in TIPOS:
+        conteo[tipo["valor"]] = 0          # cada tipo empieza en 0
     for prenda in lista_prendas:
-        conteo[prenda["tipo"]] += 1
+        if prenda["tipo"] in conteo:       # por si hay un tipo viejo que ya no está en la lista
+            conteo[prenda["tipo"]] += 1
     return render_template("index.html", total=len(lista_prendas), conteo=conteo) 
 
 @app.route("/prendas")

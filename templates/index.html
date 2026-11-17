@@ -13,26 +13,13 @@
 
 <h2 class="titulo-seccion">Categorías</h2>
 <div class="categorias">
-    <a href="/prendas?tipo=Camisa" class="categoria">
-        <span class="icono">👕</span>
-        <span class="categoria-nombre">Camisas</span>
-        <span class="categoria-numero">{{ conteo["Camisa"] }} {% if conteo["Camisa"] == 1 %}prenda{% else %}prendas{% endif %}</span>
-    </a>
-    <a href="/prendas?tipo=Pantalón" class="categoria">
-        <span class="icono">👖</span>
-        <span class="categoria-nombre">Pantalones</span>
-        <span class="categoria-numero">{{ conteo["Pantalón"] }} {% if conteo["Pantalón"] == 1 %}prenda{% else %}prendas{% endif %}</span>
-    </a>
-    <a href="/prendas?tipo=Zapatos" class="categoria">
-        <span class="icono">👟</span>
-        <span class="categoria-nombre">Zapatos</span>
-        <span class="categoria-numero">{{ conteo["Zapatos"] }} {% if conteo["Zapatos"] == 1 %}prenda{% else %}prendas{% endif %}</span>
-    </a>
-    <a href="/prendas?tipo=Accesorios" class="categoria">
-        <span class="icono">🧢</span>
-        <span class="categoria-nombre">Accesorios</span>
-        <span class="categoria-numero">{{ conteo["Accesorios"] }} {% if conteo["Accesorios"] == 1 %}prenda{% else %}prendas{% endif %}</span>
-    </a>
+    {% for tipo in TIPOS %}
+        <a href="/prendas?tipo={{ tipo.valor }}" class="categoria">
+            <span class="icono">{{ tipo.icono }}</span>
+            <span class="categoria-nombre">{{ tipo.plural }}</span>
+            <span class="categoria-numero">{{ conteo[tipo.valor] }} {% if conteo[tipo.valor] == 1 %}prenda{% else %}prendas{% endif %}</span>
+        </a>
+    {% endfor %}
 </div>
 
 {% endblock %}

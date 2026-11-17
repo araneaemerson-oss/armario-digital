@@ -30,10 +30,10 @@
 
             <span class="etiqueta">Tipo</span>
             <div class="chips">
-                {% for opcion in ["Camisa", "Pantalón", "Zapatos", "Accesorios"] %}
+                {% for tipo in TIPOS %}
                     <label class="chip">
-                        <input type="radio" name="tipo" value="{{ opcion }}" {% if opcion == prenda.tipo %}checked{% endif %}>
-                        <span>{{ opcion }}</span>
+                        <input type="radio" name="tipo" value="{{ tipo.valor }}" {% if tipo.valor == prenda.tipo %}checked{% endif %}>
+                        <span>{{ tipo.icono }} {{ tipo.valor }}</span>
                     </label>
                 {% endfor %}
             </div>
@@ -43,7 +43,7 @@
 
             <span class="etiqueta">Ocasión</span>
             <div class="chips">
-                {% for opcion in ["Casual", "Formal", "Fiesta", "Deporte"] %}
+                {% for opcion in OCASIONES %}
                     <label class="chip">
                         <input type="radio" name="ocasion" value="{{ opcion }}" {% if opcion == prenda.ocasion %}checked{% endif %}>
                         <span>{{ opcion }}</span>
