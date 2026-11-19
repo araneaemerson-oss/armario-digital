@@ -122,10 +122,28 @@ def quitar_fondo(bytes_imagen):
         from rembg import remove, new_session      # se carga aquí, solo cuando hace falta
         if sesion_rembg is None:
             sesion_rembg = new_session("u2net")
-        return remove(bytes_imagen, session=sesion_rembg)
+        resultado = remove(bytes_imagen, session=sesion_rembg)
+        return limpiar_recorte(resultado)
     except Exception as error:
         print("No se pudo quitar el fondo:", error)
         return None
+
+def limpiar_recorte(bytes_png):
+    # Deja el recorte más limpio:
+    #  1) borra la "neblina" (píxeles medio transparentes que se ven blanquinosos)
+    #  2) recorta los bordes vacíos para que la prenda ocupe toda la imagen
+    import io
+    from PIL import Image
+    imagen = Image.open(io.BytesIO(bytes_png)).convert("RGBA")
+    transparencia = imagen.getchannel("A")
+    transparencia = transparencia.point(lambda valor: 0 if valor < 110 else (255 if valor > 210 else valor))
+    imagen.putalpha(transparencia)
+    borde = transparencia.getbbox()          # el rectángulo donde SÍ hay prenda
+    if borde:
+        imagen = imagen.crop(borde)
+    salida = io.BytesIO()
+    imagen.save(salida, format="PNG")
+    return salida.getvalue()
 
 def guardar_foto(foto, sin_fondo=False):
     # Guarda la foto con un nombre único y devuelve la ruta para la base de datos

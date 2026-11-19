@@ -771,3 +771,17 @@ a{
 .form-quitar-fondo {
     margin-top: 16px;
 }
+
+
+/* ---------- Que la ropa resalte (sobre todo la blanca) ---------- */
+/* drop-shadow dibuja una sombra con la FORMA de la prenda, no un rectángulo */
+.tarjeta img,
+.outfit-fotos img,
+.elegir-tarjeta img,
+#vista-previa {
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.18));
+}
+.outfit-fotos,
+.elegir-tarjeta img {
+    background-color: #E9E5DD;
+}
