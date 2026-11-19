@@ -46,7 +46,7 @@ La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la ap
 - [x] Cuentas de usuario
 - [x] Armar y guardar outfits
 - [x] Quitar el fondo de las fotos automáticamente
-- [ ] Probador: avatar con la foto del usuario para probar outfits
+- [ ] Reconocer el tipo y el color de la prenda automáticamente desde la foto
 - [ ] Publicar la app en internet
 
 ## 🤖 Uso de IA

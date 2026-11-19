@@ -491,11 +491,6 @@ def borrar_outfit(id):
     return redirect("/outfits")
 
 
-@app.route("/probador")
-def probador():
-    return render_template("probador.html")
-
-
 # ---------- Páginas de error ----------
 @app.errorhandler(404)
 def pagina_no_encontrada(error):
