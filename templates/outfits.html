@@ -16,7 +16,8 @@
                     <div class="outfit-fotos">
                         {% for prenda in item.prendas %}
                             {% if prenda.foto %}
-                                <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}" title="{{ prenda.nombre }}">
+                                <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}" title="{{ prenda.nombre }}"
+                                     class="{% if prenda.tipo in ['Zapatos', 'Tacos', 'Accesorios'] %}pieza-chica{% endif %}">
                             {% else %}
                                 <div class="sin-foto mini">👕</div>
                             {% endif %}

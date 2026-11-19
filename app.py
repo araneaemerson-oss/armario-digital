@@ -85,6 +85,12 @@ TIPOS = [
 ]
 OCASIONES = ["Casual", "Formal", "Fiesta", "Deporte"]
 
+# Orden en el cuerpo, de arriba (0) hacia abajo, para mostrar los outfits como una persona vestida
+ORDEN_CUERPO = {
+    "Accesorios": 0, "Chaqueta": 1, "Camisa": 2, "Blusa": 2, "Vestido": 3,
+    "Pantalón": 4, "Short": 4, "Falda": 4, "Bolso": 5, "Zapatos": 6, "Tacos": 6,
+}
+
 
 # Esto hace que TIPOS y OCASIONES se puedan usar en TODOS los templates
 @app.context_processor
@@ -426,7 +432,9 @@ def outfits():
             JOIN outfit_prendas ON prendas.id = outfit_prendas.prenda_id
             WHERE outfit_prendas.outfit_id = ?
             """, (outfit["id"],)).fetchall()
-        outfits_con_prendas.append({"outfit": outfit, "prendas": prendas_del_outfit})
+        # Las ordenamos de arriba hacia abajo, como en el cuerpo 🧍
+        prendas_ordenadas = sorted(prendas_del_outfit, key=lambda p: ORDEN_CUERPO.get(p["tipo"], 5))
+        outfits_con_prendas.append({"outfit": outfit, "prendas": prendas_ordenadas})
 
     conexion.close()
     return render_template("outfits.html", outfits=outfits_con_prendas)
