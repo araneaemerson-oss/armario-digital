@@ -785,3 +785,170 @@ a{
 .elegir-tarjeta img {
     background-color: #E9E5DD;
 }
+
+
+/* ---------- Ventana grande del outfit (modal) ---------- */
+button.outfit-fotos {
+    position: relative;
+    width: 100%;
+    border: none;
+    font-family: inherit;
+    cursor: zoom-in;
+}
+.lupa {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background-color: rgba(26, 26, 26, 0.75);
+    color: #FFFFFF;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+button.outfit-fotos:hover .lupa {
+    opacity: 1;
+}
+.ventana-outfit {
+    width: min(640px, 92vw);
+    max-height: 90vh;
+    padding: 0;
+    border: none;
+    border-radius: 20px;
+    background-color: #FFFFFF;
+    color: #1A1A1A;
+    font-family: inherit;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+}
+.ventana-outfit[open] {
+    animation: abrir-ventana 0.2s ease-out;
+}
+.ventana-outfit::backdrop {
+    background-color: rgba(26, 26, 26, 0.55);   /* el fondo oscuro detrás de la ventana */
+}
+@keyframes abrir-ventana {
+    from { opacity: 0; transform: scale(0.95); }
+    to   { opacity: 1; transform: scale(1); }
+}
+.ventana-cabecera {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 24px 28px 8px;
+}
+.ventana-cabecera h2 {
+    margin: 0 0 4px;
+    font-size: 26px;
+}
+.ventana-cabecera p {
+    margin: 0;
+    color: #5C5A55;
+}
+.cerrar-ventana {
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 50%;
+    background-color: #F5F3EF;
+    font-size: 18px;
+    cursor: pointer;
+}
+.cerrar-ventana:hover {
+    background-color: #E3ECE8;
+}
+.ventana-cuerpo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    padding: 12px 28px 28px;
+    align-items: center;
+}
+/* Una sola figura: todas las prendas juntas, sin cajas separadas */
+.ventana-figura {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    height: min(66vh, 560px);     /* nunca más alta que la pantalla: así no hay que bajar */
+    padding: 16px;
+    background-color: #E9E5DD;
+    border-radius: 16px;
+}
+.figura-pieza {
+    flex: 1 1 0;                  /* cada prenda toma una parte del alto */
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+}
+.figura-pieza.pieza-chica {
+    flex: 0.55 1 0;               /* zapatos y accesorios ocupan menos */
+}
+.figura-pieza img {
+    height: 100%;
+    max-width: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.18));
+}
+.sin-foto-emoji {
+    font-size: 40px;
+    align-self: center;
+}
+.ventana-lista {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+.ventana-lista li {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+.ventana-lista li div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.lista-numero {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #1A1A1A;
+    color: #FFFFFF;
+    font-weight: 800;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.ventana-lista strong {
+    font-size: 18px;
+}
+.ventana-lista span {
+    color: #5C5A55;
+    font-size: 14px;
+}
+.ventana-lista a {
+    font-size: 13px;
+}
+
+@media (max-width: 700px) {
+    .ventana-cuerpo {
+        grid-template-columns: 1fr;
+        padding: 8px 16px 20px;
+        gap: 16px;
+    }
+    .ventana-figura {
+        height: 42vh;
+    }
+    .ventana-cabecera {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+}

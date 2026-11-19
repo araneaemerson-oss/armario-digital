@@ -13,16 +13,19 @@
         <div class="grilla-outfits">
             {% for item in outfits %}
                 <div class="tarjeta outfit">
-                    <div class="outfit-fotos">
+                    <!-- Al hacer clic en las fotos, se abre la ventana grande -->
+                    <button type="button" class="outfit-fotos abrir-outfit" data-ventana="ventana-{{ item.outfit.id }}"
+                            title="Ver en grande">
                         {% for prenda in item.prendas %}
                             {% if prenda.foto %}
-                                <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}" title="{{ prenda.nombre }}"
+                                <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}"
                                      class="{% if prenda.tipo in ['Zapatos', 'Tacos', 'Accesorios'] %}pieza-chica{% endif %}">
                             {% else %}
                                 <div class="sin-foto mini">👕</div>
                             {% endif %}
                         {% endfor %}
-                    </div>
+                        <span class="lupa">🔍 Ver en grande</span>
+                    </button>
                     <h2>{{ item.outfit.nombre }}</h2>
                     <p>{{ item.outfit.ocasion }} · {{ item.prendas|length }} {% if item.prendas|length == 1 %}prenda{% else %}prendas{% endif %}</p>
                     <p class="outfit-lista">
@@ -34,8 +37,68 @@
                         </form>
                     </div>
                 </div>
+
+                <!-- La ventana grande (modal) de este outfit -->
+                <dialog class="ventana-outfit" id="ventana-{{ item.outfit.id }}">
+                    <div class="ventana-cabecera">
+                        <div>
+                            <h2>{{ item.outfit.nombre }}</h2>
+                            <p>{{ item.outfit.ocasion }} · {{ item.prendas|length }} {% if item.prendas|length == 1 %}prenda{% else %}prendas{% endif %}</p>
+                        </div>
+                        <button type="button" class="cerrar-ventana" aria-label="Cerrar">✕</button>
+                    </div>
+
+                    <div class="ventana-cuerpo">
+                        <!-- Izquierda: una sola figura, como una persona vestida 🧍 -->
+                        <div class="ventana-figura">
+                            {% for prenda in item.prendas %}
+                                <div class="figura-pieza {% if prenda.tipo in ['Zapatos', 'Tacos', 'Accesorios'] %}pieza-chica{% endif %}">
+                                    {% if prenda.foto %}
+                                        <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
+                                    {% else %}
+                                        <span class="sin-foto-emoji">👕</span>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Derecha: la lista de prendas -->
+                        <ul class="ventana-lista">
+                            {% for prenda in item.prendas %}
+                                <li>
+                                    <span class="lista-numero">{{ loop.index }}</span>
+                                    <div>
+                                        <strong>{{ prenda.nombre }}</strong>
+                                        <span>{{ prenda.tipo }} · {{ prenda.color }}</span>
+                                        <a href="/editar/{{ prenda.id }}">Ver prenda →</a>
+                                    </div>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </dialog>
             {% endfor %}
         </div>
+
+        <script>
+            // Abrir la ventana al hacer clic en las fotos del outfit
+            document.querySelectorAll(".abrir-outfit").forEach(function (boton) {
+                boton.addEventListener("click", function () {
+                    document.getElementById(boton.dataset.ventana).showModal();
+                });
+            });
+            document.querySelectorAll(".ventana-outfit").forEach(function (ventana) {
+                // Cerrar con la ✕
+                ventana.querySelector(".cerrar-ventana").addEventListener("click", function () {
+                    ventana.close();
+                });
+                // Cerrar al hacer clic afuera (en el fondo oscuro)
+                ventana.addEventListener("click", function (evento) {
+                    if (evento.target === ventana) { ventana.close(); }
+                });
+                // La tecla Esc ya cierra el <dialog> sola 😉
+            });
+        </script>
     {% else %}
         <p class="vacio">Todavía no tienes outfits. <a href="/outfits/nuevo">¡Arma el primero!</a> 👔👖👟</p>
     {% endif %}
