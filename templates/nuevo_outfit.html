@@ -46,6 +46,9 @@
                 {% endfor %}
             </div>
 
+            <button type="button" class="boton-sugerir" id="btn-sugerir">✨ Sugerir un outfit</button>
+            <div class="sugerencia" id="sugerencia" hidden></div>
+
             <label for="nombre">Nombre <span class="opcional">(opcional)</span></label>
             <input type="text" id="nombre" name="nombre" placeholder="Ej.: Para el viernes">
 
@@ -64,6 +67,19 @@
                 elegidas + (elegidas === 1 ? " prenda elegida" : " prendas elegidas");
         }
         casillas.forEach(function (c) { c.addEventListener("change", contar); });
+
+        // ✨ Pedirle a Flask una sugerencia según la ocasión elegida
+        document.getElementById("btn-sugerir").addEventListener("click", async function () {
+            const ocasion = document.querySelector('input[name="ocasion"]:checked').value;
+            const caja = document.getElementById("sugerencia");
+            const respuesta = await fetch("/outfits/sugerir?ocasion=" + encodeURIComponent(ocasion));
+            const datos = await respuesta.json();
+            casillas.forEach(function (c) { c.checked = datos.ids.includes(Number(c.value)); });
+            contar();
+            caja.innerHTML = datos.explicacion.map(function (t) { return "<p>" + t + "</p>"; }).join("")
+                + (datos.ids.length ? "<p class='ayuda'>¿No te gusta? Presiona otra vez para otra idea 🔄</p>" : "");
+            caja.hidden = false;
+        });
     </script>
     {% endif %}
 {% endblock %}

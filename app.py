@@ -1,6 +1,6 @@
-from flask import Flask, render_template, request, redirect, flash, session
+from flask import Flask, render_template, request, redirect, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, uuid
+import os, uuid, random, colorsys
 from werkzeug.utils import secure_filename
 import sqlite3 
 
@@ -59,6 +59,12 @@ def crear_tabla():
     if "usuario_id" not in columnas:
         conexion.execute("ALTER TABLE prendas ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)")
 
+    # Corrige los nombres automáticos viejos que quedaron mal ("Camisa blanco" → "Camisa blanca")
+    for prenda in conexion.execute("SELECT id, nombre, tipo, color FROM prendas").fetchall():
+        if prenda["tipo"] and prenda["color"] and prenda["nombre"] == prenda["tipo"] + " " + prenda["color"].lower():
+            nuevo = (prenda["tipo"] + " " + concordar_color(prenda["tipo"], prenda["color"])).strip()
+            conexion.execute("UPDATE prendas SET nombre=? WHERE id=?", (nuevo, prenda["id"]))
+
     conexion.commit()
     conexion.close()
 
@@ -85,6 +91,41 @@ TIPOS = [
 ]
 OCASIONES = ["Casual", "Formal", "Fiesta", "Deporte"]
 
+# Para escribir bien el nombre automático: "Camisa blanca", "Zapatos negros", "Pantalón azul"
+TIPOS_FEMENINOS = ["Camisa", "Blusa", "Chaqueta", "Falda"]
+TIPOS_PLURALES = ["Zapatos", "Tacos", "Accesorios"]
+COLORES_INVARIABLES = ["beige", "rosa", "naranja", "lila", "fucsia", "turquesa", "crema",
+                       "vino", "café", "mostaza", "coral", "caqui", "nude", "oro", "plata"]
+
+def concordar_color(tipo, color):
+    # Cambia la primera palabra del color según el tipo: blanco → blanca / blancos
+    palabras = color.lower().split()
+    if not palabras:
+        return ""
+    c = palabras[0]
+    if c not in COLORES_INVARIABLES:
+        if tipo in TIPOS_FEMENINOS and c.endswith("o"):
+            c = c[:-1] + "a"                       # negro → negra
+        if tipo in TIPOS_PLURALES:
+            if c.endswith(("a", "e", "o")):
+                c = c + "s"                        # negro → negros
+            elif c.endswith("ón"):
+                c = c[:-2] + "ones"                # marrón → marrones
+            elif c.endswith("z"):
+                c = c[:-1] + "ces"
+            else:
+                c = c + "es"                       # azul → azules, gris → grises
+    palabras[0] = c
+    return " ".join(palabras)
+
+
+# Parte del cuerpo de cada tipo: sirve para mostrar los outfits con proporciones reales
+PARTE_DEL_CUERPO = {
+    "Accesorios": "accesorio", "Chaqueta": "arriba", "Camisa": "arriba", "Blusa": "arriba",
+    "Vestido": "vestido", "Pantalón": "abajo", "Falda": "falda", "Short": "short",
+    "Bolso": "bolso", "Zapatos": "pies", "Tacos": "pies",
+}
+
 # Orden en el cuerpo, de arriba (0) hacia abajo, para mostrar los outfits como una persona vestida
 ORDEN_CUERPO = {
     "Accesorios": 0, "Chaqueta": 1, "Camisa": 2, "Blusa": 2, "Vestido": 3,
@@ -95,7 +136,8 @@ ORDEN_CUERPO = {
 # Esto hace que TIPOS y OCASIONES se puedan usar en TODOS los templates
 @app.context_processor
 def datos_globales():
-    return {"TIPOS": TIPOS, "OCASIONES": OCASIONES, "REMBG_DISPONIBLE": REMBG_DISPONIBLE}
+    return {"TIPOS": TIPOS, "OCASIONES": OCASIONES, "REMBG_DISPONIBLE": REMBG_DISPONIBLE,
+            "PARTE_DEL_CUERPO": PARTE_DEL_CUERPO}
 
 
 CARPETA_FOTOS = os.path.join("static", "uploads")
@@ -121,7 +163,7 @@ def quitar_fondo(bytes_imagen):
     try:
         from rembg import remove, new_session      # se carga aquí, solo cuando hace falta
         if sesion_rembg is None:
-            sesion_rembg = new_session("u2net")
+            sesion_rembg = new_session("isnet-general-use")   # modelo más preciso para objetos
         resultado = remove(bytes_imagen, session=sesion_rembg)
         return limpiar_recorte(resultado)
     except Exception as error:
@@ -130,13 +172,30 @@ def quitar_fondo(bytes_imagen):
 
 def limpiar_recorte(bytes_png):
     # Deja el recorte más limpio:
-    #  1) borra la "neblina" (píxeles medio transparentes que se ven blanquinosos)
-    #  2) recorta los bordes vacíos para que la prenda ocupe toda la imagen
+    #  1) borra la "neblina" y el humo (píxeles medio transparentes)
+    #  2) borra manchitas sueltas que no son parte de la prenda
+    #  3) recorta los bordes vacíos para que la prenda ocupe toda la imagen
     import io
     from PIL import Image
     imagen = Image.open(io.BytesIO(bytes_png)).convert("RGBA")
     transparencia = imagen.getchannel("A")
-    transparencia = transparencia.point(lambda valor: 0 if valor < 110 else (255 if valor > 210 else valor))
+    transparencia = transparencia.point(lambda valor: 0 if valor < 170 else (255 if valor > 225 else valor))
+
+    try:
+        import numpy
+        from scipy import ndimage           # vienen instaladas junto con rembg
+        mascara = numpy.array(transparencia) > 0
+        etiquetas, cantidad = ndimage.label(mascara)      # separa las "islas" de píxeles
+        if cantidad > 1:
+            tamanos = ndimage.sum(mascara, etiquetas, range(1, cantidad + 1))
+            grande = tamanos.max()
+            # nos quedamos con las islas grandes (por ejemplo, los DOS zapatos) y borramos las chiquitas
+            conservar = numpy.isin(etiquetas, [i + 1 for i, t in enumerate(tamanos) if t >= grande * 0.15])
+            limpia = numpy.where(conservar, numpy.array(transparencia), 0).astype("uint8")
+            transparencia = Image.fromarray(limpia)
+    except ImportError:
+        pass
+
     imagen.putalpha(transparencia)
     borde = transparencia.getbbox()          # el rectángulo donde SÍ hay prenda
     if borde:
@@ -144,6 +203,71 @@ def limpiar_recorte(bytes_png):
     salida = io.BytesIO()
     imagen.save(salida, format="PNG")
     return salida.getvalue()
+
+
+# ---------- Color automático (gratis, sin IA) ----------
+def nombre_del_color(r, g, b):
+    # Convierte un color RGB en un nombre en español usando tono, saturación y brillo (HSV)
+    h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+    h = h * 360
+    if v < 0.2:
+        return "negro"
+    if s < 0.15:
+        if v > 0.78:
+            return "blanco"
+        if v < 0.32:
+            return "negro"
+        return "gris"
+    if s < 0.38 and v > 0.6 and 15 <= h <= 55:
+        return "beige"
+    if h < 12 or h >= 345:
+        if v < 0.45:
+            return "vino"
+        return "rosa" if (s < 0.5 and v > 0.7) else "rojo"
+    if h < 42:
+        return "café" if v < 0.6 else "naranja"
+    if h < 68:
+        return "mostaza" if v < 0.6 else "amarillo"
+    if h < 165:
+        return "verde"
+    if h < 200:
+        return "azul" if v < 0.5 else "celeste"
+    if h < 255:
+        if v < 0.38:
+            return "azul marino"
+        return "celeste" if (s < 0.45 and v > 0.7) else "azul"
+    if h < 290:
+        return "lila" if (s < 0.4 and v > 0.7) else "morado"
+    return "vino" if v < 0.45 else "rosa"
+
+def detectar_color(ruta_imagen):
+    # Mira los píxeles de la prenda y "vota" por el color que más se repite
+    try:
+        from PIL import Image
+    except ImportError:
+        return ""
+    try:
+        imagen = Image.open(ruta_imagen).convert("RGBA")
+    except Exception:
+        return ""
+    imagen.thumbnail((80, 80))                       # más pequeña = más rápido
+    tiene_transparencia = imagen.getchannel("A").getextrema()[0] < 200
+    if not tiene_transparencia:
+        # Sin fondo quitado: usamos solo el centro, donde suele estar la prenda
+        ancho, alto = imagen.size
+        imagen = imagen.crop((ancho // 4, alto // 4, ancho * 3 // 4, alto * 3 // 4))
+
+    votos = {}
+    for r, g, b, a in imagen.getdata():
+        if a < 200:
+            continue                                 # ignoramos el fondo transparente
+        nombre = nombre_del_color(r, g, b)
+        votos[nombre] = votos.get(nombre, 0) + 1
+    if not votos:
+        return ""
+    ganador = max(votos, key=votos.get)
+    return ganador.capitalize()
+
 
 def guardar_foto(foto, sin_fondo=False):
     # Guarda la foto con un nombre único y devuelve la ruta para la base de datos
@@ -191,9 +315,17 @@ def leer_formulario_prenda():
     if tipo not in tipos_validos or ocasion not in OCASIONES:
         return None                       # alguien mandó datos raros
 
-    if nombre == "":                      # nombre opcional: lo armamos solos
-        nombre = tipo + " " + color.lower()
     return {"nombre": nombre, "tipo": tipo, "color": color, "ocasion": ocasion}
+
+
+def completar_datos(datos, ruta_foto):
+    # Si el usuario dejó el color vacío, lo detectamos de la foto 🎨
+    if datos["color"] == "" and ruta_foto:
+        datos["color"] = detectar_color(os.path.join("static", ruta_foto))
+    # Si dejó el nombre vacío, lo armamos: "Camisa blanca" ✏️
+    if datos["nombre"] == "":
+        datos["nombre"] = (datos["tipo"] + " " + concordar_color(datos["tipo"], datos["color"])).strip()
+    return datos
 
 
 @app.route("/")
@@ -246,6 +378,7 @@ def subir():
             flash("⚠️ Elige una foto en formato JPG, PNG o WEBP")
             return redirect("/subir")
         ruta_foto = guardar_foto(foto, sin_fondo="sin_fondo" in request.form)
+        datos = completar_datos(datos, ruta_foto)
 
         conexion = conectar()
         conexion.execute(
@@ -314,6 +447,7 @@ def editar(id):
                 return redirect(f"/editar/{id}")
             ruta_foto = guardar_foto(foto_nueva, sin_fondo="sin_fondo" in request.form)    # guardamos la nueva
             borrar_foto_del_disco(prenda["foto"])   # y borramos la vieja
+        datos = completar_datos(datos, ruta_foto)
 
         conexion.execute(
             "UPDATE prendas SET nombre = ?, tipo = ?, color = ?, ocasion = ?, foto = ? WHERE id = ?",
@@ -501,6 +635,90 @@ def nuevo_outfit():
 
     conexion.close()
     return render_template("nuevo_outfit.html", prendas=mis_prendas)
+
+
+# ---------- Sugerir outfit con reglas de moda (gratis, sin IA) ----------
+COLORES_NEUTROS = ["negro", "blanco", "gris", "beige", "azul marino", "café", "crema", "nude"]
+
+def es_neutro(color):
+    return (color or "").lower() in COLORES_NEUTROS
+
+def combinan(color1, color2):
+    # Regla de moda sencilla: los neutros combinan con todo; dos colores fuertes, solo si son iguales
+    return es_neutro(color1) or es_neutro(color2) or (color1 or "").lower() == (color2 or "").lower()
+
+def elegir(candidatas, colores_elegidos):
+    # De las prendas candidatas, elige al azar una que combine con TODO lo ya elegido
+    buenas = []
+    for prenda in candidatas:
+        if all(combinan(prenda["color"], c) for c in colores_elegidos):
+            buenas.append(prenda)
+    if not buenas:
+        buenas = candidatas                    # si ninguna combina perfecto, usamos cualquiera
+    return random.choice(buenas) if buenas else None
+
+def sugerir_outfit(prendas, ocasion):
+    grupos = {"arriba": [], "abajo": [], "vestido": [], "pies": [], "chaqueta": [], "extra": []}
+    grupo_de = {"Camisa": "arriba", "Blusa": "arriba", "Pantalón": "abajo", "Short": "abajo",
+                "Falda": "abajo", "Vestido": "vestido", "Zapatos": "pies", "Tacos": "pies",
+                "Chaqueta": "chaqueta", "Bolso": "extra", "Accesorios": "extra"}
+    for prenda in prendas:
+        grupo = grupo_de.get(prenda["tipo"])
+        if grupo:
+            grupos[grupo].append(prenda)
+
+    def de_la_ocasion(grupo):
+        # Preferimos las prendas de la ocasión elegida; si no hay, usamos todas las del grupo
+        mismas = [p for p in grupos[grupo] if p["ocasion"] == ocasion]
+        return mismas if mismas else grupos[grupo]
+
+    elegidas = []
+    usar_vestido = grupos["vestido"] and (not (grupos["arriba"] and grupos["abajo"]) or random.random() < 0.4)
+    if usar_vestido:
+        orden = ["vestido"]
+    elif grupos["arriba"] and grupos["abajo"]:
+        orden = ["arriba", "abajo"]
+    else:
+        return [], ["Te faltan prendas: necesitas una parte de arriba y una de abajo, o un vestido. 👕👖"]
+
+    orden.append("pies")
+    if ocasion == "Formal" or random.random() < 0.3:
+        orden.append("chaqueta")
+    if random.random() < 0.5:
+        orden.append("extra")
+
+    for grupo in orden:
+        if grupos[grupo]:
+            prenda = elegir(de_la_ocasion(grupo), [p["color"] for p in elegidas])
+            if prenda:
+                elegidas.append(prenda)
+
+    # Explicamos por qué combina 💬
+    explicacion = []
+    neutros = [p["nombre"] for p in elegidas if es_neutro(p["color"])]
+    con_color = [p["nombre"] for p in elegidas if not es_neutro(p["color"])]
+    if con_color and neutros:
+        explicacion.append("🎨 " + ", ".join(con_color) + " resalta, y lo acompañan colores neutros (" + ", ".join(neutros) + ").")
+    elif neutros and not con_color:
+        explicacion.append("🤍 Todo en colores neutros: elegante y fácil de combinar.")
+    else:
+        explicacion.append("🌈 Combinación en el mismo tono.")
+    if any(p["ocasion"] == ocasion for p in elegidas):
+        explicacion.append("✅ Elegimos prendas para la ocasión " + ocasion.lower() + ".")
+    if not grupos["pies"]:
+        explicacion.append("👟 Tip: sube unos zapatos para completar tus outfits.")
+    return [p["id"] for p in elegidas], explicacion
+
+
+@app.route("/outfits/sugerir")
+def sugerir():
+    ocasion = request.args.get("ocasion", OCASIONES[0])
+    conexion = conectar()
+    mis_prendas = conexion.execute(
+        "SELECT * FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)).fetchall()
+    conexion.close()
+    ids, explicacion = sugerir_outfit(mis_prendas, ocasion)
+    return jsonify({"ids": ids, "explicacion": explicacion})
 
 
 @app.route("/outfits/borrar/<int:id>", methods=["POST"])

@@ -8,20 +8,23 @@
     <form method="POST" enctype="multipart/form-data" class="subir-layout">
 
         <!-- Columna izquierda: la foto (opcional) -->
-        <label for="foto" class="zona-foto">
-            {% if prenda.foto %}
-                <img id="vista-previa" src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
-                <span class="cambiar-foto">📷 Clic para cambiar la foto</span>
-            {% else %}
-                <img id="vista-previa" alt="Vista previa de la prenda" hidden>
-                <div id="zona-texto" class="zona-texto">
-                    <span class="zona-icono">📷</span>
-                    <strong>Haz clic para elegir una foto</strong>
-                    <span>JPG o PNG · con fondo claro se ve mejor</span>
-                </div>
-            {% endif %}
-            <input type="file" id="foto" name="foto" accept="image/*">
-        </label>
+        <div class="columna-foto">
+            <label for="foto" class="zona-foto">
+                {% if prenda.foto %}
+                    <img id="vista-previa" src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
+                    <span class="cambiar-foto">📷 Clic para cambiar la foto</span>
+                {% else %}
+                    <img id="vista-previa" alt="Vista previa de la prenda" hidden>
+                    <div id="zona-texto" class="zona-texto">
+                        <span class="zona-icono">📷</span>
+                        <strong>Haz clic para elegir una foto</strong>
+                        <span>JPG o PNG · con fondo claro se ve mejor</span>
+                    </div>
+                {% endif %}
+                <input type="file" id="foto" name="foto" accept="image/*">
+            </label>
+            {% include "_consejos_foto.html" %}
+        </div>
 
         <!-- Columna derecha: los datos -->
         <div class="formulario subir-campos">

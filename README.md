@@ -10,7 +10,10 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 - 🙈 Cada usuario ve, edita y borra **solo su propia ropa**
 - 📸 Subir prendas con foto (con vista previa), tipo, color, ocasión y nombre opcional
 - ✂️ Quitar el fondo de las fotos automáticamente con IA (`rembg`)
-- 👔 Armar y guardar outfits combinando prendas
+- 👔 Armar y guardar outfits combinando prendas, verlos en grande y pasar de uno a otro
+- 🎨 Color automático: si no escribes el color, la app lo detecta de la foto (Pillow + HSV)
+- ✨ Sugerir outfits con reglas de moda programadas (colores neutros, ocasión)
+- 📸 Consejos para tomar buenas fotos de las prendas
 - 🗂️ 11 categorías (camisas, vestidos, tacos, bolsos...) definidas en un solo lugar del código
 - 🏠 Inicio que se adapta a cada usuario: muestra solo las categorías que usa
 - 🔍 Filtros por tipo de prenda
@@ -46,7 +49,8 @@ La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la ap
 - [x] Cuentas de usuario
 - [x] Armar y guardar outfits
 - [x] Quitar el fondo de las fotos automáticamente
-- [ ] Reconocer el tipo y el color de la prenda automáticamente desde la foto
+- [x] Detectar el color de la prenda automáticamente
+- [ ] Reconocer el tipo de prenda con IA
 - [ ] Publicar la app en internet
 
 ## 🤖 Uso de IA

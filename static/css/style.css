@@ -639,15 +639,9 @@ a{
     padding: 16px 10px;
     margin-bottom: 12px;
 }
-.tarjeta .outfit-fotos img {
-    width: auto;
-    max-width: 70%;
-    height: 150px;
-    object-fit: contain;
-    margin: 0;
-}
-.tarjeta .outfit-fotos img.pieza-chica {
-    height: 80px;                /* zapatos y accesorios más pequeños */
+button.outfit-fotos {
+    height: 400px;               /* misma figura que la ventana, pero más pequeña */
+    gap: 2px;
 }
 .sin-foto.mini {
     height: 110px;
@@ -846,6 +840,32 @@ button.outfit-fotos:hover .lupa {
     margin: 0;
     color: #5C5A55;
 }
+.ventana-controles {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+.contador-ventana {
+    font-size: 14px;
+    font-weight: 700;
+    color: #5C5A55;
+    min-width: 52px;
+    text-align: center;
+}
+.nav-ventana {
+    width: 40px;
+    height: 40px;
+    border: 1px solid #D6D1C7;
+    border-radius: 50%;
+    background-color: #FFFFFF;
+    font-size: 24px;
+    line-height: 1;
+    cursor: pointer;
+}
+.nav-ventana:hover {
+    background-color: #E3ECE8;
+}
 .cerrar-ventana {
     width: 40px;
     height: 40px;
@@ -876,22 +896,36 @@ button.outfit-fotos:hover .lupa {
     background-color: #E9E5DD;
     border-radius: 16px;
 }
+/* ---------- Proporciones reales del cuerpo ---------- */
+/* Cada parte del cuerpo ocupa un pedazo distinto del alto (flex) y un ancho máximo distinto */
 .figura-pieza {
-    flex: 1 1 0;                  /* cada prenda toma una parte del alto */
     min-height: 0;
     width: 100%;
     display: flex;
     justify-content: center;
 }
-.figura-pieza.pieza-chica {
-    flex: 0.55 1 0;               /* zapatos y accesorios ocupan menos */
-}
 .figura-pieza img {
     height: 100%;
-    max-width: 100%;
     object-fit: contain;
+    margin: 0;
     filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.18));
 }
+.pieza-accesorio { flex: 0.35 1 0; }
+.pieza-accesorio img { max-width: 30%; }
+.pieza-arriba    { flex: 1 1 0; }       /* camisa, blusa, chaqueta */
+.pieza-arriba img { max-width: 78%; }
+.pieza-vestido   { flex: 2.1 1 0; }
+.pieza-vestido img { max-width: 72%; }
+.pieza-abajo     { flex: 1.45 1 0; }    /* el pantalón es MÁS LARGO que la camisa */
+.pieza-abajo img { max-width: 52%; }
+.pieza-falda     { flex: 0.9 1 0; }
+.pieza-falda img { max-width: 58%; }
+.pieza-short     { flex: 0.75 1 0; }
+.pieza-short img { max-width: 56%; }
+.pieza-bolso     { flex: 0.5 1 0; }
+.pieza-bolso img { max-width: 32%; }
+.pieza-pies      { flex: 0.5 1 0; }    /* zapatos y tacos */
+.pieza-pies img  { max-width: 56%; }
 .sin-foto-emoji {
     font-size: 40px;
     align-self: center;
@@ -951,4 +985,49 @@ button.outfit-fotos:hover .lupa {
         padding-left: 16px;
         padding-right: 16px;
     }
+}
+
+
+/* ---------- Consejos para la foto ---------- */
+.columna-foto {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.consejos-foto {
+    background-color: #FFF8E8;
+    border: 1px solid #F0E2BC;
+    border-radius: 16px;
+    padding: 16px 20px;
+    font-size: 14px;
+    color: #3D3B37;
+}
+.consejos-foto ul {
+    margin: 8px 0 0;
+    padding-left: 4px;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* ---------- Sugerir outfit ---------- */
+.formulario .boton-sugerir {
+    background-color: #FFFFFF;
+    color: #2F5D50;
+    border: 2px solid #2F5D50;
+    margin-top: 16px;
+}
+.formulario .boton-sugerir:hover {
+    background-color: #E3ECE8;
+}
+.sugerencia {
+    background-color: #F3F8F5;
+    border: 1px solid #C8DAD2;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+.sugerencia p {
+    margin: 4px 0;
 }

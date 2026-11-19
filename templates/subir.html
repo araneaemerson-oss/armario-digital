@@ -9,15 +9,18 @@
           onsubmit="this.querySelector('button[type=submit]').textContent = '⏳ Guardando...'">
 
         <!-- Columna izquierda: la foto -->
-        <label for="foto" class="zona-foto">
-            <img id="vista-previa" alt="Vista previa de la prenda" hidden>
-            <div id="zona-texto" class="zona-texto">
-                <span class="zona-icono">📷</span>
-                <strong>Haz clic para elegir una foto</strong>
-                <span>JPG o PNG · con fondo claro se ve mejor</span>
-            </div>
-            <input type="file" id="foto" name="foto" accept="image/*" required>
-        </label>
+        <div class="columna-foto">
+            <label for="foto" class="zona-foto">
+                <img id="vista-previa" alt="Vista previa de la prenda" hidden>
+                <div id="zona-texto" class="zona-texto">
+                    <span class="zona-icono">📷</span>
+                    <strong>Haz clic para elegir una foto</strong>
+                    <span>JPG o PNG · con fondo claro se ve mejor</span>
+                </div>
+                <input type="file" id="foto" name="foto" accept="image/*" required>
+            </label>
+            {% include "_consejos_foto.html" %}
+        </div>
 
         <!-- Columna derecha: los datos -->
         <div class="formulario subir-campos">

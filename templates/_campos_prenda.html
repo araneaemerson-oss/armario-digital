@@ -12,8 +12,9 @@
     {% endfor %}
 </div>
 
-<label for="color">Color</label>
-<input type="text" id="color" name="color" value="{{ prenda.color if prenda else '' }}" placeholder="Ej.: azul" required>
+<label for="color">Color <span class="opcional">(opcional)</span></label>
+<input type="text" id="color" name="color" value="{{ prenda.color if prenda else '' }}" placeholder="Ej.: azul">
+<p class="ayuda">🎨 Si lo dejas vacío, lo detectamos de la foto.</p>
 
 <span class="etiqueta">Ocasión</span>
 <div class="chips">
@@ -43,7 +44,7 @@
     function actualizarNombreSugerido() {
         const tipo = document.querySelector('input[name="tipo"]:checked').value;
         const color = document.getElementById("color").value.trim().toLowerCase();
-        const sugerido = (tipo + " " + color).trim();
+        const sugerido = color ? (tipo + " " + color) : (tipo + " + el color de la foto");
         document.getElementById("nombre").placeholder = sugerido;
         document.getElementById("ayuda-nombre").innerHTML =
             "Si lo dejas vacío, se llamará <strong>" + sugerido + "</strong>.";

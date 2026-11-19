@@ -17,12 +17,13 @@
                     <button type="button" class="outfit-fotos abrir-outfit" data-ventana="ventana-{{ item.outfit.id }}"
                             title="Ver en grande">
                         {% for prenda in item.prendas %}
-                            {% if prenda.foto %}
-                                <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}"
-                                     class="{% if prenda.tipo in ['Zapatos', 'Tacos', 'Accesorios'] %}pieza-chica{% endif %}">
-                            {% else %}
-                                <div class="sin-foto mini">👕</div>
-                            {% endif %}
+                            <div class="figura-pieza pieza-{{ PARTE_DEL_CUERPO.get(prenda.tipo, 'arriba') }}">
+                                {% if prenda.foto %}
+                                    <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
+                                {% else %}
+                                    <span class="sin-foto-emoji">👕</span>
+                                {% endif %}
+                            </div>
                         {% endfor %}
                         <span class="lupa">🔍 Ver en grande</span>
                     </button>
@@ -45,14 +46,21 @@
                             <h2>{{ item.outfit.nombre }}</h2>
                             <p>{{ item.outfit.ocasion }} · {{ item.prendas|length }} {% if item.prendas|length == 1 %}prenda{% else %}prendas{% endif %}</p>
                         </div>
-                        <button type="button" class="cerrar-ventana" aria-label="Cerrar">✕</button>
+                        <div class="ventana-controles">
+                            {% if outfits|length > 1 %}
+                                <button type="button" class="nav-ventana anterior" aria-label="Outfit anterior">‹</button>
+                                <span class="contador-ventana">{{ loop.index }} de {{ outfits|length }}</span>
+                                <button type="button" class="nav-ventana siguiente" aria-label="Outfit siguiente">›</button>
+                            {% endif %}
+                            <button type="button" class="cerrar-ventana" aria-label="Cerrar">✕</button>
+                        </div>
                     </div>
 
                     <div class="ventana-cuerpo">
                         <!-- Izquierda: una sola figura, como una persona vestida 🧍 -->
                         <div class="ventana-figura">
                             {% for prenda in item.prendas %}
-                                <div class="figura-pieza {% if prenda.tipo in ['Zapatos', 'Tacos', 'Accesorios'] %}pieza-chica{% endif %}">
+                                <div class="figura-pieza pieza-{{ PARTE_DEL_CUERPO.get(prenda.tipo, 'arriba') }}">
                                     {% if prenda.foto %}
                                         <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
                                     {% else %}
@@ -81,22 +89,52 @@
         </div>
 
         <script>
-            // Abrir la ventana al hacer clic en las fotos del outfit
-            document.querySelectorAll(".abrir-outfit").forEach(function (boton) {
-                boton.addEventListener("click", function () {
-                    document.getElementById(boton.dataset.ventana).showModal();
-                });
+            // Todas las ventanas, en orden: así sabemos cuál es la anterior y la siguiente
+            const ventanas = Array.from(document.querySelectorAll(".ventana-outfit"));
+            let actual = -1;
+
+            function abrirVentana(numero) {
+                // Damos la vuelta: después del último viene el primero (y al revés)
+                numero = (numero + ventanas.length) % ventanas.length;
+                if (actual >= 0 && ventanas[actual].open) { ventanas[actual].close(); }
+                actual = numero;
+                ventanas[actual].showModal();
+            }
+
+            // Abrir al hacer clic en las fotos del outfit
+            document.querySelectorAll(".abrir-outfit").forEach(function (boton, numero) {
+                boton.addEventListener("click", function () { abrirVentana(numero); });
             });
-            document.querySelectorAll(".ventana-outfit").forEach(function (ventana) {
-                // Cerrar con la ✕
-                ventana.querySelector(".cerrar-ventana").addEventListener("click", function () {
-                    ventana.close();
-                });
+
+            ventanas.forEach(function (ventana) {
+                ventana.querySelector(".cerrar-ventana").addEventListener("click", function () { ventana.close(); });
+                const anterior = ventana.querySelector(".anterior");
+                const siguiente = ventana.querySelector(".siguiente");
+                if (anterior) { anterior.addEventListener("click", function () { abrirVentana(actual - 1); }); }
+                if (siguiente) { siguiente.addEventListener("click", function () { abrirVentana(actual + 1); }); }
+
                 // Cerrar al hacer clic afuera (en el fondo oscuro)
                 ventana.addEventListener("click", function (evento) {
                     if (evento.target === ventana) { ventana.close(); }
                 });
-                // La tecla Esc ya cierra el <dialog> sola 😉
+
+                // En el celular: deslizar el dedo a la izquierda o a la derecha
+                let inicioX = null;
+                ventana.addEventListener("touchstart", function (e) { inicioX = e.touches[0].clientX; });
+                ventana.addEventListener("touchend", function (e) {
+                    if (inicioX === null || ventanas.length < 2) { return; }
+                    const distancia = e.changedTouches[0].clientX - inicioX;
+                    if (distancia < -50) { abrirVentana(actual + 1); }
+                    if (distancia > 50) { abrirVentana(actual - 1); }
+                    inicioX = null;
+                });
+            });
+
+            // Teclado: flechas ⬅️ ➡️ (la tecla Esc ya cierra el <dialog> sola 😉)
+            document.addEventListener("keydown", function (e) {
+                if (actual < 0 || !ventanas[actual].open || ventanas.length < 2) { return; }
+                if (e.key === "ArrowRight") { abrirVentana(actual + 1); }
+                if (e.key === "ArrowLeft") { abrirVentana(actual - 1); }
             });
         </script>
     {% else %}
