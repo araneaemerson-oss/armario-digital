@@ -13,8 +13,11 @@ REMBG_DISPONIBLE = importlib.util.find_spec("rembg") is not None
 sesion_rembg = None
 
 
+# La ruta de la base de datos se puede cambiar (las pruebas usan una base de datos aparte 🧪)
+RUTA_BASE_DE_DATOS = os.environ.get("ARMARIO_DB", "armario.db")
+
 def conectar():
-    conexion = sqlite3.connect("armario.db")
+    conexion = sqlite3.connect(RUTA_BASE_DE_DATOS)
     conexion.row_factory = sqlite3.Row
     return conexion
 
@@ -258,7 +261,9 @@ def detectar_color(ruta_imagen):
         imagen = imagen.crop((ancho // 4, alto // 4, ancho * 3 // 4, alto * 3 // 4))
 
     votos = {}
-    for r, g, b, a in imagen.getdata():
+    pixeles = imagen.tobytes()                       # todos los píxeles: R, G, B, A, R, G, B, A...
+    for i in range(0, len(pixeles), 4):
+        r, g, b, a = pixeles[i], pixeles[i + 1], pixeles[i + 2], pixeles[i + 3]
         if a < 200:
             continue                                 # ignoramos el fondo transparente
         nombre = nombre_del_color(r, g, b)
@@ -747,4 +752,7 @@ def archivo_muy_grande(error):
 
 
 crear_tabla()
-app.run(debug=True)
+
+# Solo encendemos el servidor si ejecutas "python app.py" (no cuando las pruebas importan este archivo)
+if __name__ == "__main__":
+    app.run(debug=True)

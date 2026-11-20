@@ -28,6 +28,7 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 - **HTML**, **CSS** y **Jinja** (frontend y plantillas)
 - **SQLite** y **SQL** (base de datos con tablas relacionadas)
 - **JavaScript** (vista previa de fotos y nombre sugerido)
+- **pytest** (pruebas automáticas)
 
 ## 🚀 Cómo ejecutarlo
 
@@ -42,6 +43,14 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 3. Abre en el navegador: http://127.0.0.1:5000
 
 La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la app. La primera vez que quitas un fondo, `rembg` descarga su modelo de IA (unos 170 MB).
+
+## 🧪 Pruebas automáticas
+
+El proyecto tiene **27 pruebas automáticas** con `pytest` que revisan el login, la seguridad entre usuarios, las prendas, los outfits y las funciones de color. Usan una base de datos temporal, así que no tocan tus datos.
+
+```
+python -m pytest -v
+```
 
 ## 🗺️ Próximos pasos
 
