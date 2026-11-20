@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <h1>Mi uso</h1>
+    <p class="subtitulo">Descubre qué ropa usas de verdad y cuál tienes olvidada. 📊</p>
+
+    {% if not prendas %}
+        <p class="vacio">Todavía no tienes prendas. <a href="/subir">¡Sube la primera!</a> 📸</p>
+    {% else %}
+        <div class="resumen-uso">
+            <div class="dato"><span class="dato-numero">{{ usos_del_mes }}</span><span>veces que usaste ropa en los últimos 30 días</span></div>
+            <div class="dato"><span class="dato-numero">{{ nunca_usadas|length }}</span><span>{% if nunca_usadas|length == 1 %}prenda que nunca has usado{% else %}prendas que nunca has usado{% endif %}</span></div>
+            <div class="dato"><span class="dato-numero">{{ olvidadas|length }}</span><span>{% if olvidadas|length == 1 %}prenda olvidada{% else %}prendas olvidadas{% endif %} (más de 30 días)</span></div>
+        </div>
+
+        {% if favoritas %}
+            <h2 class="titulo-seccion">⭐ Tus favoritas</h2>
+            <div class="grilla-uso">
+                {% for prenda in favoritas %}
+                    <div class="tarjeta tarjeta-uso">
+                        {% if prenda.foto %}<img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">{% endif %}
+                        <h2>{% if loop.first %}🥇 {% elif loop.index == 2 %}🥈 {% else %}🥉 {% endif %}{{ prenda.nombre }}</h2>
+                        <p>Usada {{ prenda.veces }} {% if prenda.veces == 1 %}vez{% else %}veces{% endif %}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p class="vacio">Aún no anotas lo que te pones. En el <a href="/">Inicio</a> presiona <strong>"✅ Hoy me pongo esto"</strong>, o en tus <a href="/outfits">Outfits</a>, <strong>"✅ Me lo puse hoy"</strong>.</p>
+        {% endif %}
+
+        {% if olvidadas or nunca_usadas %}
+            <h2 class="titulo-seccion">😴 Ropa que casi no usas</h2>
+            <p class="ayuda">¿La guardas, la combinas distinto, la donas o la vendes? 💡</p>
+            <div class="grilla-uso">
+                {% for prenda in olvidadas + nunca_usadas %}
+                    <div class="tarjeta tarjeta-uso apagada">
+                        {% if prenda.foto %}<img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">{% endif %}
+                        <h2>{{ prenda.nombre }}</h2>
+                        <p>{% if prenda.veces == 0 %}Nunca usada{% else %}Última vez: {{ prenda.ultima_vez }}{% endif %}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <h2 class="titulo-seccion">📋 Todas tus prendas</h2>
+        <table class="tabla-uso">
+            <thead><tr><th>Prenda</th><th>Tipo</th><th>Veces usada</th><th>Última vez</th></tr></thead>
+            <tbody>
+                {% for prenda in prendas %}
+                    <tr>
+                        <td>{{ prenda.nombre }}</td>
+                        <td>{{ prenda.tipo }}</td>
+                        <td>{{ prenda.veces }}</td>
+                        <td>{{ prenda.ultima_vez or "—" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

@@ -33,6 +33,9 @@
                         {% for prenda in item.prendas %}{{ prenda.nombre }}{% if not loop.last %} + {% endif %}{% endfor %}
                     </p>
                     <div class="acciones">
+                        <form method="POST" action="/outfits/usar/{{ item.outfit.id }}">
+                            <button type="submit" class="boton boton-editar">✅ Me lo puse hoy</button>
+                        </form>
                         <form method="POST" action="/outfits/borrar/{{ item.outfit.id }}" onsubmit="return confirm('¿Seguro que quieres borrar este outfit? Tus prendas no se borran.')">
                             <button type="submit" class="boton boton-borrar">Borrar</button>
                         </form>

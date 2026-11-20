@@ -1031,3 +1031,126 @@ button.outfit-fotos:hover .lupa {
 .sugerencia p {
     margin: 4px 0;
 }
+
+
+/* ---------- 🌦️ ¿Qué me pongo hoy? ---------- */
+.hoy {
+    display: grid;
+    grid-template-columns: 1fr 220px;
+    gap: 24px;
+    align-items: center;
+    background-color: #FFFFFF;
+    border: 1px solid #E5E1D8;
+    border-radius: 24px;
+    padding: 32px 40px;
+    margin-bottom: 40px;
+}
+.hoy h2 {
+    font-size: 28px;
+    margin: 4px 0 12px;
+}
+.hoy-clima {
+    margin: 0;
+    color: #5C5A55;
+    font-size: 16px;
+}
+.hoy-icono {
+    font-size: 24px;
+    vertical-align: middle;
+}
+.hoy-lista {
+    margin: 0 0 12px;
+    padding-left: 20px;
+    font-weight: 700;
+    line-height: 1.7;
+}
+.hoy .hero-botones {
+    margin-top: 16px;
+    align-items: center;
+}
+.hoy .hero-botones form {
+    margin: 0;
+}
+.hoy-listo {
+    font-weight: 700;
+    color: #2F5D50;
+}
+.hoy-figura {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 300px;
+    padding: 12px;
+    background-color: #E9E5DD;
+    border-radius: 16px;
+}
+
+/* ---------- 📊 Mi uso ---------- */
+.resumen-uso {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.dato {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background-color: #FFFFFF;
+    border: 1px solid #E5E1D8;
+    border-radius: 16px;
+    padding: 20px;
+    color: #5C5A55;
+}
+.dato-numero {
+    font-size: 40px;
+    font-weight: 800;
+    color: #1A1A1A;
+}
+.grilla-uso {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+}
+.tarjeta-uso img {
+    height: 150px;
+}
+.tarjeta-uso h2 {
+    font-size: 16px;
+}
+.tarjeta-uso.apagada img {
+    opacity: 0.55;
+}
+.tabla-uso {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid #E5E1D8;
+}
+.tabla-uso th,
+.tabla-uso td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #F0ECE4;
+}
+.tabla-uso th {
+    background-color: #F5F3EF;
+    font-size: 14px;
+}
+
+@media (max-width: 700px) {
+    .hoy {
+        grid-template-columns: 1fr;
+        padding: 24px 20px;
+    }
+    .hoy-figura {
+        height: 240px;
+    }
+    .tabla-uso th:nth-child(2),
+    .tabla-uso td:nth-child(2) {
+        display: none;
+    }
+}

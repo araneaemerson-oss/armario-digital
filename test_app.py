@@ -31,6 +31,15 @@ def limpiar_fotos_de_prueba():
         os.remove(os.path.join(CARPETA_FOTOS, archivo))
 
 
+CLIMA_DE_PRUEBA = {"ciudad": "Guayaquil", "temperatura": 25, "lluvia": False,
+                   "icono": "⛅", "descripcion": "Parcialmente nublado"}
+
+@pytest.fixture(autouse=True)
+def clima_falso(monkeypatch):
+    # Las pruebas no se conectan a internet: usamos un clima inventado
+    monkeypatch.setattr(armario, "clima_de_hoy", lambda: dict(CLIMA_DE_PRUEBA))
+
+
 @pytest.fixture
 def cliente():
     # Un "navegador de mentira" para visitar las páginas de la app
@@ -243,3 +252,86 @@ def test_pagina_que_no_existe_muestra_404(cliente):
     respuesta = cliente.get("/esta-pagina-no-existe")
     assert respuesta.status_code == 404
     assert "calcetín" in respuesta.get_data(as_text=True)
+
+
+# ---------- 🌦️ ¿Qué me pongo hoy? ----------
+
+def test_inicio_muestra_el_clima_y_un_outfit(cliente):
+    crear_usuario(cliente)
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="negro")
+    pagina = cliente.get("/").get_data(as_text=True)
+    assert "25°C" in pagina and "Guayaquil" in pagina
+    assert "Tu outfit para hoy" in pagina and "Hoy me pongo esto" in pagina
+
+
+def test_con_calor_prefiere_short_y_sin_chaqueta():
+    prendas = [
+        {"id": 1, "tipo": "Camisa", "color": "Blanco", "ocasion": "Casual", "nombre": "Camisa"},
+        {"id": 2, "tipo": "Pantalón", "color": "Negro", "ocasion": "Casual", "nombre": "Pantalón"},
+        {"id": 3, "tipo": "Short", "color": "Azul", "ocasion": "Casual", "nombre": "Short"},
+        {"id": 4, "tipo": "Chaqueta", "color": "Negro", "ocasion": "Casual", "nombre": "Chaqueta"},
+    ]
+    calor = {"temperatura": 32, "lluvia": False}
+    for _ in range(20):                      # como es al azar, probamos varias veces
+        ids, explicacion = armario.sugerir_outfit(prendas, "Casual", calor)
+        assert 3 in ids and 2 not in ids and 4 not in ids
+
+
+def test_con_lluvia_agrega_chaqueta():
+    prendas = [
+        {"id": 1, "tipo": "Camisa", "color": "Blanco", "ocasion": "Casual", "nombre": "Camisa"},
+        {"id": 2, "tipo": "Pantalón", "color": "Negro", "ocasion": "Casual", "nombre": "Pantalón"},
+        {"id": 4, "tipo": "Chaqueta", "color": "Negro", "ocasion": "Casual", "nombre": "Chaqueta"},
+    ]
+    ids, explicacion = armario.sugerir_outfit(prendas, "Casual", {"temperatura": 24, "lluvia": True})
+    assert 4 in ids
+
+
+# ---------- 📊 ¿Cuánto uso mi ropa? ----------
+
+def test_hoy_me_pongo_esto_registra_el_uso_una_vez_por_dia(cliente):
+    correo = crear_usuario(cliente)
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="negro")
+    prenda_id = ids_de_prendas(correo)[0]
+    cliente.post("/usar", data={"prendas": [str(prenda_id)]})
+    cliente.post("/usar", data={"prendas": [str(prenda_id)]})      # dos veces el mismo día
+    pagina = cliente.get("/mi-uso").get_data(as_text=True)
+    assert "Usada 1 vez" in pagina
+    assert "Ya anotaste lo que te pusiste hoy" in cliente.get("/").get_data(as_text=True)
+
+
+def test_no_puedes_registrar_uso_de_ropa_ajena(cliente):
+    correo_ana = crear_usuario(cliente, "ana")
+    subir_prenda(cliente)
+    id_de_ana = ids_de_prendas(correo_ana)[0]
+    cliente.get("/salir")
+    crear_usuario(cliente, "beto")
+    cliente.post("/usar", data={"prendas": [str(id_de_ana)]})
+    conexion = armario.conectar()
+    usos = conexion.execute("SELECT COUNT(*) FROM usos WHERE prenda_id=?", (id_de_ana,)).fetchone()[0]
+    conexion.close()
+    assert usos == 0
+
+
+def test_me_puse_el_outfit_registra_todas_sus_prendas(cliente):
+    correo = crear_usuario(cliente)
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="azul")
+    ids = [str(i) for i in ids_de_prendas(correo)]
+    cliente.post("/outfits/nuevo", data={"prendas": ids, "ocasion": "Casual"})
+    conexion = armario.conectar()
+    outfit_id = conexion.execute("SELECT MAX(id) FROM outfits").fetchone()[0]
+    conexion.close()
+    respuesta = cliente.post(f"/outfits/usar/{outfit_id}", follow_redirects=True)
+    assert "Hoy te pusiste este outfit" in respuesta.get_data(as_text=True)
+    pagina = cliente.get("/mi-uso").get_data(as_text=True)
+    assert pagina.count("Usada 1 vez") == 2
+
+
+def test_mi_uso_muestra_ropa_nunca_usada(cliente):
+    crear_usuario(cliente)
+    subir_prenda(cliente, nombre="Chaqueta olvidada", tipo="Chaqueta", color="gris")
+    pagina = cliente.get("/mi-uso").get_data(as_text=True)
+    assert "Chaqueta olvidada" in pagina and "Nunca usada" in pagina

@@ -14,6 +14,8 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 - 🎨 Color automático: si no escribes el color, la app lo detecta de la foto (Pillow + HSV)
 - ✨ Sugerir outfits con reglas de moda programadas (colores neutros, ocasión)
 - 📸 Consejos para tomar buenas fotos de las prendas
+- 🌦️ **"¿Qué me pongo hoy?"**: el Inicio sugiere un outfit según el clima de Guayaquil (API gratuita de Open-Meteo)
+- 📊 **Mi uso**: registra qué te pones cada día y muestra tus prendas favoritas y las que nunca usas
 - 🗂️ 11 categorías (camisas, vestidos, tacos, bolsos...) definidas en un solo lugar del código
 - 🏠 Inicio que se adapta a cada usuario: muestra solo las categorías que usa
 - 🔍 Filtros por tipo de prenda
@@ -46,7 +48,7 @@ La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la ap
 
 ## 🧪 Pruebas automáticas
 
-El proyecto tiene **27 pruebas automáticas** con `pytest` que revisan el login, la seguridad entre usuarios, las prendas, los outfits y las funciones de color. Usan una base de datos temporal, así que no tocan tus datos.
+El proyecto tiene **34 pruebas automáticas** con `pytest` que revisan el login, la seguridad entre usuarios, las prendas, los outfits, el clima, el registro de uso y las funciones de color. Usan una base de datos temporal, así que no tocan tus datos.
 
 ```
 python -m pytest -v

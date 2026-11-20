@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, uuid, random, colorsys
+import os, uuid, random, colorsys, json, time, datetime, urllib.request
 from werkzeug.utils import secure_filename
 import sqlite3 
 
@@ -61,6 +61,15 @@ def crear_tabla():
         columnas.append(columna["name"])
     if "usuario_id" not in columnas:
         conexion.execute("ALTER TABLE prendas ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)")
+
+    # Registro de uso: qué prenda te pusiste y qué día 📊
+    conexion.execute("""
+        CREATE TABLE IF NOT EXISTS usos(
+        usuario_id INTEGER REFERENCES usuarios(id),
+        prenda_id INTEGER REFERENCES prendas(id),
+        fecha TEXT,
+        PRIMARY KEY (usuario_id, prenda_id, fecha))
+        """)
 
     # Corrige los nombres automáticos viejos que quedaron mal ("Camisa blanco" → "Camisa blanca")
     for prenda in conexion.execute("SELECT id, nombre, tipo, color FROM prendas").fetchall():
@@ -297,6 +306,48 @@ def borrar_foto_del_disco(ruta_foto):
             os.remove(ruta_completa)
 
 
+# ---------- 🌦️ Clima de hoy (Open-Meteo: gratis y sin cuenta) ----------
+CIUDAD = {"nombre": "Guayaquil", "latitud": -2.19, "longitud": -79.89}
+DESCRIPCION_CLIMA = {
+    0: ("☀️", "Despejado"), 1: ("🌤️", "Casi despejado"), 2: ("⛅", "Parcialmente nublado"),
+    3: ("☁️", "Nublado"), 45: ("🌫️", "Neblina"), 48: ("🌫️", "Neblina"),
+    51: ("🌦️", "Llovizna"), 53: ("🌦️", "Llovizna"), 55: ("🌦️", "Llovizna fuerte"),
+    61: ("🌧️", "Lluvia ligera"), 63: ("🌧️", "Lluvia"), 65: ("🌧️", "Lluvia fuerte"),
+    80: ("🌦️", "Chubascos"), 81: ("🌧️", "Chubascos"), 82: ("⛈️", "Chubascos fuertes"),
+    95: ("⛈️", "Tormenta"), 96: ("⛈️", "Tormenta"), 99: ("⛈️", "Tormenta"),
+}
+clima_guardado = {"datos": None, "hora": 0}      # guardamos el clima 30 minutos para no preguntar a cada rato
+
+def clima_de_hoy():
+    if clima_guardado["datos"] and time.time() - clima_guardado["hora"] < 30 * 60:
+        return clima_guardado["datos"]
+    url = ("https://api.open-meteo.com/v1/forecast"
+           f"?latitude={CIUDAD['latitud']}&longitude={CIUDAD['longitud']}"
+           "&current=temperature_2m,precipitation,weather_code&timezone=auto")
+    try:
+        with urllib.request.urlopen(url, timeout=4) as respuesta:
+            actual = json.loads(respuesta.read())["current"]
+    except Exception as error:
+        print("No se pudo consultar el clima:", error)
+        return None                              # sin internet: la app sigue funcionando
+    codigo = int(actual.get("weather_code", 0))
+    icono, descripcion = DESCRIPCION_CLIMA.get(codigo, ("🌡️", "Clima de hoy"))
+    datos = {
+        "ciudad": CIUDAD["nombre"],
+        "temperatura": round(actual.get("temperature_2m", 0)),
+        "lluvia": actual.get("precipitation", 0) > 0 or 51 <= codigo <= 99,
+        "icono": icono,
+        "descripcion": descripcion,
+    }
+    clima_guardado["datos"] = datos
+    clima_guardado["hora"] = time.time()
+    return datos
+
+
+def hoy():
+    return datetime.date.today().isoformat()       # por ejemplo "2026-11-20"
+
+
 # ---------- Proteger las páginas: hay que iniciar sesión ----------
 PAGINAS_LIBRES = ["entrar", "registro", "static"]
 
@@ -346,7 +397,23 @@ def inicio():
     for prenda in lista_prendas:
         if prenda["tipo"] in conteo:       # por si hay un tipo viejo que ya no está en la lista
             conteo[prenda["tipo"]] += 1
-    return render_template("index.html", total=len(lista_prendas), conteo=conteo) 
+
+    # 🌦️ "¿Qué me pongo hoy?": un outfit sugerido según el clima
+    clima = clima_de_hoy()
+    sugerencia, explicacion = [], []
+    if lista_prendas:
+        ids, explicacion = sugerir_outfit(lista_prendas, "Casual", clima)
+        sugerencia = [p for p in lista_prendas if p["id"] in ids]
+        sugerencia = sorted(sugerencia, key=lambda p: ORDEN_CUERPO.get(p["tipo"], 5))
+
+    # ¿Ya registraste qué te pusiste hoy?
+    conexion = conectar()
+    usadas_hoy = conexion.execute("SELECT COUNT(*) FROM usos WHERE usuario_id=? AND fecha=?",
+                                  (session["usuario_id"], hoy())).fetchone()[0]
+    conexion.close()
+
+    return render_template("index.html", total=len(lista_prendas), conteo=conteo, clima=clima,
+                           sugerencia=sugerencia, explicacion=explicacion, usadas_hoy=usadas_hoy)
 
 @app.route("/prendas")
 def prendas():
@@ -413,6 +480,7 @@ def borrar(id):
     if prenda:
         # también la sacamos de los outfits donde estaba
         conexion.execute("DELETE FROM outfit_prendas WHERE prenda_id=?", (id,))
+        conexion.execute("DELETE FROM usos WHERE prenda_id=?", (id,))
     conexion.execute(
         "DELETE FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])
     )
@@ -642,6 +710,73 @@ def nuevo_outfit():
     return render_template("nuevo_outfit.html", prendas=mis_prendas)
 
 
+# ---------- 📊 ¿Cuánto uso mi ropa? ----------
+def registrar_uso(ids_prendas):
+    # Guarda que hoy te pusiste estas prendas (solo las tuyas, y una vez por día)
+    conexion = conectar()
+    guardadas = 0
+    for prenda_id in ids_prendas:
+        es_mia = conexion.execute("SELECT id FROM prendas WHERE id=? AND usuario_id=?",
+                                  (prenda_id, session["usuario_id"])).fetchone()
+        if es_mia:
+            conexion.execute("INSERT OR IGNORE INTO usos (usuario_id, prenda_id, fecha) VALUES (?, ?, ?)",
+                             (session["usuario_id"], prenda_id, hoy()))
+            guardadas += 1
+    conexion.commit()
+    conexion.close()
+    return guardadas
+
+
+@app.route("/usar", methods=["POST"])
+def usar_prendas():
+    ids = []
+    for valor in request.form.getlist("prendas"):
+        if valor.isdigit():
+            ids.append(int(valor))
+    if registrar_uso(ids):
+        flash("✅ ¡Anotado! Hoy te pusiste este outfit")
+    return redirect(request.form.get("volver", "/"))
+
+
+@app.route("/outfits/usar/<int:id>", methods=["POST"])
+def usar_outfit(id):
+    conexion = conectar()
+    outfit = conexion.execute("SELECT id FROM outfits WHERE id=? AND usuario_id=?",
+                              (id, session["usuario_id"])).fetchone()
+    ids = []
+    if outfit:
+        for fila in conexion.execute("SELECT prenda_id FROM outfit_prendas WHERE outfit_id=?", (id,)).fetchall():
+            ids.append(fila["prenda_id"])
+    conexion.close()
+    if registrar_uso(ids):
+        flash("✅ ¡Anotado! Hoy te pusiste este outfit")
+    return redirect("/outfits")
+
+
+@app.route("/mi-uso")
+def mi_uso():
+    conexion = conectar()
+    # LEFT JOIN: traemos TODAS tus prendas, aunque nunca las hayas usado
+    filas = conexion.execute("""
+        SELECT prendas.*, COUNT(usos.fecha) AS veces, MAX(usos.fecha) AS ultima_vez
+        FROM prendas
+        LEFT JOIN usos ON usos.prenda_id = prendas.id AND usos.usuario_id = prendas.usuario_id
+        WHERE prendas.usuario_id = ?
+        GROUP BY prendas.id
+        ORDER BY veces DESC, prendas.nombre
+        """, (session["usuario_id"],)).fetchall()
+    hace_30_dias = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
+    usos_del_mes = conexion.execute("SELECT COUNT(*) FROM usos WHERE usuario_id=? AND fecha >= ?",
+                                    (session["usuario_id"], hace_30_dias)).fetchone()[0]
+    conexion.close()
+
+    favoritas = [p for p in filas if p["veces"] > 0][:3]
+    nunca_usadas = [p for p in filas if p["veces"] == 0]
+    olvidadas = [p for p in filas if p["veces"] > 0 and p["ultima_vez"] < hace_30_dias]
+    return render_template("mi_uso.html", prendas=filas, favoritas=favoritas, nunca_usadas=nunca_usadas,
+                           olvidadas=olvidadas, usos_del_mes=usos_del_mes)
+
+
 # ---------- Sugerir outfit con reglas de moda (gratis, sin IA) ----------
 COLORES_NEUTROS = ["negro", "blanco", "gris", "beige", "azul marino", "café", "crema", "nude"]
 
@@ -662,7 +797,7 @@ def elegir(candidatas, colores_elegidos):
         buenas = candidatas                    # si ninguna combina perfecto, usamos cualquiera
     return random.choice(buenas) if buenas else None
 
-def sugerir_outfit(prendas, ocasion):
+def sugerir_outfit(prendas, ocasion, clima=None):
     grupos = {"arriba": [], "abajo": [], "vestido": [], "pies": [], "chaqueta": [], "extra": []}
     grupo_de = {"Camisa": "arriba", "Blusa": "arriba", "Pantalón": "abajo", "Short": "abajo",
                 "Falda": "abajo", "Vestido": "vestido", "Zapatos": "pies", "Tacos": "pies",
@@ -677,6 +812,16 @@ def sugerir_outfit(prendas, ocasion):
         mismas = [p for p in grupos[grupo] if p["ocasion"] == ocasion]
         return mismas if mismas else grupos[grupo]
 
+    # 🌦️ Ajustes por el clima
+    hace_calor = clima is not None and clima["temperatura"] >= 27
+    hace_frio = clima is not None and clima["temperatura"] < 20
+    llueve = clima is not None and clima["lluvia"]
+    if hace_calor and not llueve:
+        frescas = [p for p in grupos["abajo"] if p["tipo"] in ["Short", "Falda"]]
+        if frescas:
+            grupos["abajo"] = frescas          # con calor preferimos short o falda
+        grupos["chaqueta"] = []                # y nada de chaqueta
+
     elegidas = []
     usar_vestido = grupos["vestido"] and (not (grupos["arriba"] and grupos["abajo"]) or random.random() < 0.4)
     if usar_vestido:
@@ -687,7 +832,7 @@ def sugerir_outfit(prendas, ocasion):
         return [], ["Te faltan prendas: necesitas una parte de arriba y una de abajo, o un vestido. 👕👖"]
 
     orden.append("pies")
-    if ocasion == "Formal" or random.random() < 0.3:
+    if ocasion == "Formal" or hace_frio or llueve or random.random() < 0.3:
         orden.append("chaqueta")
     if random.random() < 0.5:
         orden.append("extra")
@@ -710,6 +855,12 @@ def sugerir_outfit(prendas, ocasion):
         explicacion.append("🌈 Combinación en el mismo tono.")
     if any(p["ocasion"] == ocasion for p in elegidas):
         explicacion.append("✅ Elegimos prendas para la ocasión " + ocasion.lower() + ".")
+    if hace_calor and not llueve:
+        explicacion.append("☀️ Hace calor: elegimos algo fresco y sin chaqueta.")
+    if llueve:
+        explicacion.append("🌧️ Puede llover: una chaqueta te vendrá bien.")
+    elif hace_frio:
+        explicacion.append("🧥 Está fresco: agregamos una chaqueta.")
     if not grupos["pies"]:
         explicacion.append("👟 Tip: sube unos zapatos para completar tus outfits.")
     return [p["id"] for p in elegidas], explicacion

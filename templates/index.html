@@ -12,6 +12,47 @@
     </div>
 </section>
 
+<!-- 🌦️ ¿Qué me pongo hoy? -->
+{% if sugerencia or clima %}
+<section class="hoy">
+    <div class="hoy-texto">
+        {% if clima %}
+            <p class="hoy-clima"><span class="hoy-icono">{{ clima.icono }}</span>
+                <strong>{{ clima.temperatura }}°C</strong> · {{ clima.descripcion }} en {{ clima.ciudad }}</p>
+        {% endif %}
+        <h2>Tu outfit para hoy</h2>
+        {% if sugerencia %}
+            <ul class="hoy-lista">
+                {% for prenda in sugerencia %}<li>{{ prenda.nombre }}</li>{% endfor %}
+            </ul>
+            {% for texto in explicacion %}<p class="ayuda">{{ texto }}</p>{% endfor %}
+            <div class="hero-botones">
+                {% if usadas_hoy %}
+                    <span class="hoy-listo">✅ Ya anotaste lo que te pusiste hoy</span>
+                {% else %}
+                    <form method="POST" action="/usar">
+                        {% for prenda in sugerencia %}<input type="hidden" name="prendas" value="{{ prenda.id }}">{% endfor %}
+                        <button type="submit" class="boton boton-principal">✅ Hoy me pongo esto</button>
+                    </form>
+                {% endif %}
+                <a href="/" class="boton boton-secundario">🔄 Otra idea</a>
+            </div>
+        {% else %}
+            {% for texto in explicacion %}<p class="ayuda">{{ texto }}</p>{% endfor %}
+        {% endif %}
+    </div>
+    {% if sugerencia %}
+        <div class="hoy-figura">
+            {% for prenda in sugerencia %}
+                <div class="figura-pieza pieza-{{ PARTE_DEL_CUERPO.get(prenda.tipo, 'arriba') }}">
+                    {% if prenda.foto %}<img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">{% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+</section>
+{% endif %}
+
 <h2 class="titulo-seccion">Tus categorías</h2>
 
 {% if total > 0 %}
