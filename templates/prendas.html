@@ -31,7 +31,9 @@
                 <p>{{prenda.tipo}} - {{prenda.color}} - {{prenda.ocasion}}</p>
                 <div class="acciones">
                     <a href="/editar/{{prenda.id}}" class="boton boton-editar">Editar</a>
-                    <form method="POST" action="/borrar/{{prenda.id}}" onsubmit="return confirm ('¿Seguro que quieres borrar esta prenda?')">
+                    {% set en_outfits = outfits_de.get(prenda.id, []) %}
+                    <form method="POST" action="/borrar/{{prenda.id}}" onsubmit="return confirm(this.dataset.mensaje)"
+                          data-mensaje="{% if en_outfits %}⚠️ Esta prenda está en {{ en_outfits|length }} {% if en_outfits|length == 1 %}outfit{% else %}outfits{% endif %}: {{ en_outfits|join(', ') }}. Si la borras, se quitará de {% if en_outfits|length == 1 %}él{% else %}ellos{% endif %}. ¿Seguro?{% else %}¿Seguro que quieres borrar esta prenda?{% endif %}">
                         <button type="submit" class="boton boton-borrar">Borrar</button>
                     </form>
 

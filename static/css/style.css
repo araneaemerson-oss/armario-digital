@@ -1154,3 +1154,23 @@ button.outfit-fotos:hover .lupa {
         display: none;
     }
 }
+
+
+/* ---------- Outfits incompletos ---------- */
+.etiqueta-incompleto {
+    display: inline-block;
+    padding: 4px 10px;
+    margin: 4px 0 8px;
+    border-radius: 999px;
+    background-color: #FFF4D6;
+    color: #7A5A00;
+    font-size: 13px;
+    font-weight: 700;
+}
+.acciones {
+    flex-wrap: wrap;
+}
+.boton-ventana {
+    display: inline-block;
+    margin-top: 20px;
+}

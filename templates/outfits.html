@@ -27,14 +27,18 @@
                         {% endfor %}
                         <span class="lupa">🔍 Ver en grande</span>
                     </button>
+                    {% if item.falta %}
+                        <span class="etiqueta-incompleto">⚠️ Incompleto: falta {{ item.falta|join(' y ') }}</span>
+                    {% endif %}
                     <h2>{{ item.outfit.nombre }}</h2>
                     <p>{{ item.outfit.ocasion }} · {{ item.prendas|length }} {% if item.prendas|length == 1 %}prenda{% else %}prendas{% endif %}</p>
                     <p class="outfit-lista">
                         {% for prenda in item.prendas %}{{ prenda.nombre }}{% if not loop.last %} + {% endif %}{% endfor %}
                     </p>
                     <div class="acciones">
+                        <a href="/outfits/editar/{{ item.outfit.id }}" class="boton boton-editar">Editar</a>
                         <form method="POST" action="/outfits/usar/{{ item.outfit.id }}">
-                            <button type="submit" class="boton boton-editar">✅ Me lo puse hoy</button>
+                            <button type="submit" class="boton boton-editar">✅ Me lo puse</button>
                         </form>
                         <form method="POST" action="/outfits/borrar/{{ item.outfit.id }}" onsubmit="return confirm('¿Seguro que quieres borrar este outfit? Tus prendas no se borran.')">
                             <button type="submit" class="boton boton-borrar">Borrar</button>
@@ -74,6 +78,10 @@
                         </div>
 
                         <!-- Derecha: la lista de prendas -->
+                        <div>
+                        {% if item.falta %}
+                            <span class="etiqueta-incompleto">⚠️ Incompleto: falta {{ item.falta|join(' y ') }}</span>
+                        {% endif %}
                         <ul class="ventana-lista">
                             {% for prenda in item.prendas %}
                                 <li>
@@ -86,6 +94,8 @@
                                 </li>
                             {% endfor %}
                         </ul>
+                        <a href="/outfits/editar/{{ item.outfit.id }}" class="boton boton-editar boton-ventana">✏️ Editar outfit</a>
+                        </div>
                     </div>
                 </dialog>
             {% endfor %}

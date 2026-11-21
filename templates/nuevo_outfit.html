@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block contenido %}
-    <h1>Armar outfit</h1>
+    <h1>{% if outfit %}Editar outfit{% else %}Armar outfit{% endif %}</h1>
     <p class="subtitulo">Elige las prendas que quieres combinar (mínimo 2).</p>
 
     {% if prendas|length < 2 %}
@@ -16,7 +16,7 @@
                     <div class="elegir-grilla">
                         {% for prenda in del_tipo %}
                             <label class="elegir-prenda">
-                                <input type="checkbox" name="prendas" value="{{ prenda.id }}">
+                                <input type="checkbox" name="prendas" value="{{ prenda.id }}" {% if prenda.id in elegidas %}checked{% endif %}>
                                 <span class="elegir-tarjeta">
                                     {% if prenda.foto %}
                                         <img src="{{ url_for('static', filename=prenda.foto) }}" alt="{{ prenda.nombre }}">
@@ -40,7 +40,8 @@
             <div class="chips">
                 {% for opcion in OCASIONES %}
                     <label class="chip">
-                        <input type="radio" name="ocasion" value="{{ opcion }}" {% if loop.first %}checked{% endif %}>
+                        <input type="radio" name="ocasion" value="{{ opcion }}"
+                            {% if outfit %}{% if opcion == outfit.ocasion %}checked{% endif %}{% elif loop.first %}checked{% endif %}>
                         <span>{{ opcion }}</span>
                     </label>
                 {% endfor %}
@@ -50,9 +51,9 @@
             <div class="sugerencia" id="sugerencia" hidden></div>
 
             <label for="nombre">Nombre <span class="opcional">(opcional)</span></label>
-            <input type="text" id="nombre" name="nombre" placeholder="Ej.: Para el viernes">
+            <input type="text" id="nombre" name="nombre" placeholder="Ej.: Para el viernes" value="{{ outfit.nombre if outfit else '' }}">
 
-            <button type="submit">Guardar outfit</button>
+            <button type="submit">{% if outfit %}Guardar cambios{% else %}Guardar outfit{% endif %}</button>
             <a href="/outfits" class="cancelar">Cancelar</a>
         </div>
     </form>
@@ -67,6 +68,7 @@
                 elegidas + (elegidas === 1 ? " prenda elegida" : " prendas elegidas");
         }
         casillas.forEach(function (c) { c.addEventListener("change", contar); });
+        contar();      // al editar, ya hay prendas marcadas
 
         // ✨ Pedirle a Flask una sugerencia según la ocasión elegida
         document.getElementById("btn-sugerir").addEventListener("click", async function () {

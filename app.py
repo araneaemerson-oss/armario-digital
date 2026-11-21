@@ -433,8 +433,17 @@ def prendas():
             "SELECT DISTINCT tipo FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)).fetchall():
         tipos_usados.append(fila["tipo"])
 
+    # ¿En qué outfits está cada prenda? (para avisar antes de borrarla ⚠️)
+    outfits_de = {}
+    for fila in conexion.execute("""
+            SELECT outfit_prendas.prenda_id, outfits.nombre FROM outfit_prendas
+            JOIN outfits ON outfits.id = outfit_prendas.outfit_id
+            WHERE outfits.usuario_id = ?""", (session["usuario_id"],)).fetchall():
+        outfits_de.setdefault(fila["prenda_id"], []).append(fila["nombre"])
+
     conexion.close()
-    return render_template("prendas.html" , prendas=lista_prendas, tipo_actual=tipo, tipos_usados=tipos_usados)
+    return render_template("prendas.html" , prendas=lista_prendas, tipo_actual=tipo, tipos_usados=tipos_usados,
+                           outfits_de=outfits_de)
 
 
 @app.route("/subir", methods=["GET","POST"])
@@ -477,10 +486,27 @@ def borrar(id):
     conexion = conectar()
     prenda = conexion.execute(
         "SELECT foto FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])).fetchone()
+    outfits_quitados = []
     if prenda:
-        # también la sacamos de los outfits donde estaba
+        # ¿En qué outfits estaba esta prenda?
+        afectados = conexion.execute("""
+            SELECT outfits.id, outfits.nombre FROM outfits
+            JOIN outfit_prendas ON outfit_prendas.outfit_id = outfits.id
+            WHERE outfit_prendas.prenda_id = ?""", (id,)).fetchall()
+
+        # la sacamos de los outfits y de las estadísticas
         conexion.execute("DELETE FROM outfit_prendas WHERE prenda_id=?", (id,))
         conexion.execute("DELETE FROM usos WHERE prenda_id=?", (id,))
+
+        # 🧹 Si un outfit se quedó con menos de 2 prendas, ya no es un outfit: lo borramos
+        for outfit in afectados:
+            quedan = conexion.execute("SELECT COUNT(*) FROM outfit_prendas WHERE outfit_id=?",
+                                      (outfit["id"],)).fetchone()[0]
+            if quedan < 2:
+                conexion.execute("DELETE FROM outfit_prendas WHERE outfit_id=?", (outfit["id"],))
+                conexion.execute("DELETE FROM outfits WHERE id=?", (outfit["id"],))
+                outfits_quitados.append(outfit["nombre"])
+
     conexion.execute(
         "DELETE FROM prendas WHERE id=? AND usuario_id=?", (id, session["usuario_id"])
     )
@@ -489,7 +515,14 @@ def borrar(id):
 
     if prenda:
         borrar_foto_del_disco(prenda["foto"])
-    flash("🗑️ Prenda borrada")
+    if outfits_quitados:
+        nombres = ", ".join(outfits_quitados)
+        if len(outfits_quitados) == 1:
+            flash(f"🗑️ Prenda borrada. También quitamos el outfit {nombres}, porque se quedó con menos de 2 prendas.")
+        else:
+            flash(f"🗑️ Prenda borrada. También quitamos los outfits {nombres}, porque se quedaron con menos de 2 prendas.")
+    else:
+        flash("🗑️ Prenda borrada")
     return redirect("/prendas")
 
 
@@ -643,6 +676,21 @@ def quitar_fondo_prenda(id):
 
 
 # ---------- Outfits ----------
+def que_le_falta(prendas):
+    # Revisa si a un outfit le falta una parte importante del cuerpo
+    tipos = [p["tipo"] for p in prendas]
+    tiene_vestido = "Vestido" in tipos
+    falta = []
+    if not tiene_vestido:
+        if not any(t in ["Camisa", "Blusa", "Chaqueta"] for t in tipos):
+            falta.append("parte de arriba")
+        if not any(t in ["Pantalón", "Short", "Falda"] for t in tipos):
+            falta.append("parte de abajo")
+    if not any(t in ["Zapatos", "Tacos"] for t in tipos):
+        falta.append("calzado")
+    return falta
+
+
 @app.route("/outfits")
 def outfits():
     conexion = conectar()
@@ -659,7 +707,8 @@ def outfits():
             """, (outfit["id"],)).fetchall()
         # Las ordenamos de arriba hacia abajo, como en el cuerpo 🧍
         prendas_ordenadas = sorted(prendas_del_outfit, key=lambda p: ORDEN_CUERPO.get(p["tipo"], 5))
-        outfits_con_prendas.append({"outfit": outfit, "prendas": prendas_ordenadas})
+        outfits_con_prendas.append({"outfit": outfit, "prendas": prendas_ordenadas,
+                                    "falta": que_le_falta(prendas_ordenadas)})
 
     conexion.close()
     return render_template("outfits.html", outfits=outfits_con_prendas)
@@ -667,9 +716,32 @@ def outfits():
 
 @app.route("/outfits/nuevo", methods=["GET","POST"])
 def nuevo_outfit():
+    return formulario_outfit(None)
+
+
+@app.route("/outfits/editar/<int:id>", methods=["GET","POST"])
+def editar_outfit(id):
+    return formulario_outfit(id)
+
+
+def formulario_outfit(outfit_id):
+    # Crear (outfit_id = None) y editar usan este mismo código ♻️
     conexion = conectar()
     mis_prendas = conexion.execute(
         "SELECT * FROM prendas WHERE usuario_id = ?", (session["usuario_id"],)).fetchall()
+
+    outfit = None
+    elegidas = []
+    if outfit_id is not None:
+        outfit = conexion.execute("SELECT * FROM outfits WHERE id=? AND usuario_id=?",
+                                  (outfit_id, session["usuario_id"])).fetchone()
+        if outfit is None:
+            conexion.close()
+            flash("⚠️ Ese outfit no existe")
+            return redirect("/outfits")
+        for fila in conexion.execute("SELECT prenda_id FROM outfit_prendas WHERE outfit_id=?",
+                                     (outfit_id,)).fetchall():
+            elegidas.append(fila["prenda_id"])
 
     if request.method=="POST":
         ocasion = request.form.get("ocasion", "")
@@ -682,32 +754,39 @@ def nuevo_outfit():
             ids_mios.append(str(prenda["id"]))
         ids_validos = []
         for prenda_id in ids_elegidos:
-            if prenda_id in ids_mios:
+            if prenda_id in ids_mios and int(prenda_id) not in ids_validos:
                 ids_validos.append(int(prenda_id))
 
+        volver = "/outfits/nuevo" if outfit_id is None else f"/outfits/editar/{outfit_id}"
         if len(ids_validos) < 2:
             conexion.close()
             flash("⚠️ Elige al menos 2 prendas para armar un outfit")
-            return redirect("/outfits/nuevo")
+            return redirect(volver)
         if ocasion not in OCASIONES:
             ocasion = OCASIONES[0]
         if nombre == "":
             nombre = "Outfit " + ocasion.lower()
 
-        cursor = conexion.execute(
-            "INSERT INTO outfits (nombre, ocasion, usuario_id) VALUES (?, ?, ?)",
-            (nombre, ocasion, session["usuario_id"]))
-        outfit_id = cursor.lastrowid
-        for prenda_id in ids_validos:
+        if outfit_id is None:
+            cursor = conexion.execute(
+                "INSERT INTO outfits (nombre, ocasion, usuario_id) VALUES (?, ?, ?)",
+                (nombre, ocasion, session["usuario_id"]))
+            outfit_id = cursor.lastrowid
+            mensaje = "👔 Outfit guardado"
+        else:
+            conexion.execute("UPDATE outfits SET nombre=?, ocasion=? WHERE id=?", (nombre, ocasion, outfit_id))
+            conexion.execute("DELETE FROM outfit_prendas WHERE outfit_id=?", (outfit_id,))   # borramos las viejas...
+            mensaje = "✏️ Outfit actualizado"
+        for prenda_id in ids_validos:                                                     # ...y guardamos las nuevas
             conexion.execute(
                 "INSERT INTO outfit_prendas (outfit_id, prenda_id) VALUES (?, ?)", (outfit_id, prenda_id))
         conexion.commit()
         conexion.close()
-        flash("👔 Outfit guardado")
+        flash(mensaje)
         return redirect("/outfits")
 
     conexion.close()
-    return render_template("nuevo_outfit.html", prendas=mis_prendas)
+    return render_template("nuevo_outfit.html", prendas=mis_prendas, outfit=outfit, elegidas=elegidas)
 
 
 # ---------- 📊 ¿Cuánto uso mi ropa? ----------

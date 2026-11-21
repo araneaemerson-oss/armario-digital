@@ -335,3 +335,92 @@ def test_mi_uso_muestra_ropa_nunca_usada(cliente):
     subir_prenda(cliente, nombre="Chaqueta olvidada", tipo="Chaqueta", color="gris")
     pagina = cliente.get("/mi-uso").get_data(as_text=True)
     assert "Chaqueta olvidada" in pagina and "Nunca usada" in pagina
+
+
+# ---------- 🧹 Borrar prendas que están en outfits ----------
+
+def crear_outfit(cliente, ids, nombre="", ocasion="Casual"):
+    cliente.post("/outfits/nuevo", data={"prendas": [str(i) for i in ids], "ocasion": ocasion, "nombre": nombre})
+    conexion = armario.conectar()
+    outfit_id = conexion.execute("SELECT MAX(id) FROM outfits").fetchone()[0]
+    conexion.close()
+    return outfit_id
+
+
+def test_avisa_antes_de_borrar_una_prenda_que_esta_en_outfits(cliente):
+    correo = crear_usuario(cliente)
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="azul")
+    crear_outfit(cliente, ids_de_prendas(correo), nombre="playa")
+    pagina = cliente.get("/prendas").get_data(as_text=True)
+    assert "Esta prenda está en 1 outfit: playa" in pagina
+
+
+def test_borrar_prenda_quita_outfits_que_quedan_con_menos_de_2(cliente):
+    correo = crear_usuario(cliente)
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="azul")
+    camisa, pantalon = ids_de_prendas(correo)
+    outfit_id = crear_outfit(cliente, [camisa, pantalon], nombre="playa")
+    respuesta = cliente.post(f"/borrar/{camisa}", follow_redirects=True)
+    assert "También quitamos el outfit playa" in respuesta.get_data(as_text=True)
+    conexion = armario.conectar()
+    assert conexion.execute("SELECT * FROM outfits WHERE id=?", (outfit_id,)).fetchone() is None
+    conexion.close()
+
+
+def test_outfit_con_3_prendas_sigue_existiendo_pero_incompleto(cliente):
+    correo = crear_usuario(cliente)
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="azul")
+    subir_prenda(cliente, tipo="Zapatos", color="negro")
+    camisa, pantalon, zapatos = ids_de_prendas(correo)
+    crear_outfit(cliente, [camisa, pantalon, zapatos], nombre="oficina")
+    cliente.post(f"/borrar/{zapatos}")
+    pagina = cliente.get("/outfits").get_data(as_text=True)
+    assert "oficina" in pagina
+    assert "Incompleto: falta calzado" in pagina
+
+
+def test_que_le_falta():
+    assert armario.que_le_falta([{"tipo": "Vestido"}, {"tipo": "Tacos"}]) == []
+    assert armario.que_le_falta([{"tipo": "Camisa"}, {"tipo": "Zapatos"}]) == ["parte de abajo"]
+
+
+# ---------- ✏️ Editar outfit ----------
+
+def test_editar_outfit(cliente):
+    correo = crear_usuario(cliente)
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="azul")
+    subir_prenda(cliente, tipo="Zapatos", color="negro")
+    camisa, pantalon, zapatos = ids_de_prendas(correo)
+    outfit_id = crear_outfit(cliente, [camisa, pantalon], nombre="playa")
+
+    pagina = cliente.get(f"/outfits/editar/{outfit_id}").get_data(as_text=True)
+    assert "Editar outfit" in pagina and 'value="playa"' in pagina
+
+    respuesta = cliente.post(f"/outfits/editar/{outfit_id}", data={
+        "prendas": [str(camisa), str(pantalon), str(zapatos)], "ocasion": "Fiesta", "nombre": "fiesta playera"},
+        follow_redirects=True)
+    pagina = respuesta.get_data(as_text=True)
+    assert "Outfit actualizado" in pagina and "fiesta playera" in pagina
+    conexion = armario.conectar()
+    cantidad = conexion.execute("SELECT COUNT(*) FROM outfit_prendas WHERE outfit_id=?", (outfit_id,)).fetchone()[0]
+    conexion.close()
+    assert cantidad == 3
+
+
+def test_no_puedes_editar_el_outfit_de_otro(cliente):
+    correo = crear_usuario(cliente, "ana")
+    subir_prenda(cliente, tipo="Camisa", color="blanco")
+    subir_prenda(cliente, tipo="Pantalón", color="azul")
+    outfit_id = crear_outfit(cliente, ids_de_prendas(correo), nombre="de ana")
+    cliente.get("/salir")
+    crear_usuario(cliente, "beto")
+    assert cliente.get(f"/outfits/editar/{outfit_id}").status_code == 302
+    cliente.post(f"/outfits/editar/{outfit_id}", data={"prendas": [], "ocasion": "Casual", "nombre": "hackeado"})
+    conexion = armario.conectar()
+    assert conexion.execute("SELECT nombre FROM outfits WHERE id=?", (outfit_id,)).fetchone()["nombre"] == "de ana"
+    conexion.close()
+
