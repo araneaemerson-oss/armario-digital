@@ -16,7 +16,7 @@ os.environ["ARMARIO_DB"] = os.path.join(CARPETA_TEMPORAL, "pruebas.db")
 
 import app as armario   # noqa: E402  (se importa después de configurar la base de datos)
 
-CARPETA_FOTOS = os.path.join("static", "uploads")
+CARPETA_FOTOS = armario.CARPETA_FOTOS
 
 
 # ---------- Herramientas para las pruebas ----------
@@ -179,9 +179,9 @@ def test_borrar_prenda_tambien_borra_la_foto(cliente):
     conexion = armario.conectar()
     foto = conexion.execute("SELECT foto FROM prendas WHERE id=?", (prenda_id,)).fetchone()["foto"]
     conexion.close()
-    assert os.path.exists(os.path.join("static", foto))
+    assert os.path.exists(os.path.join(armario.CARPETA_STATIC, foto))
     cliente.post(f"/borrar/{prenda_id}")
-    assert not os.path.exists(os.path.join("static", foto))
+    assert not os.path.exists(os.path.join(armario.CARPETA_STATIC, foto))
 
 
 # ---------- 👔 Outfits ----------

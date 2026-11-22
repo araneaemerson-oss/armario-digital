@@ -14,7 +14,11 @@ sesion_rembg = None
 
 
 # La ruta de la base de datos se puede cambiar (las pruebas usan una base de datos aparte 🧪)
-RUTA_BASE_DE_DATOS = os.environ.get("ARMARIO_DB", "armario.db")
+# La carpeta donde está este archivo. Usamos rutas completas para que la app funcione
+# igual en tu compu y en el hosting (allá la app arranca desde otra carpeta) 🌍
+CARPETA_PROYECTO = os.path.dirname(os.path.abspath(__file__))
+CARPETA_STATIC = os.path.join(CARPETA_PROYECTO, "static")
+RUTA_BASE_DE_DATOS = os.environ.get("ARMARIO_DB", os.path.join(CARPETA_PROYECTO, "armario.db"))
 
 def conectar():
     conexion = sqlite3.connect(RUTA_BASE_DE_DATOS)
@@ -152,7 +156,7 @@ def datos_globales():
             "PARTE_DEL_CUERPO": PARTE_DEL_CUERPO}
 
 
-CARPETA_FOTOS = os.path.join("static", "uploads")
+CARPETA_FOTOS = os.path.join(CARPETA_STATIC, "uploads")
 os.makedirs(CARPETA_FOTOS, exist_ok=True)
 
 # Solo aceptamos fotos, y de máximo 10 MB
@@ -301,7 +305,7 @@ def guardar_foto(foto, sin_fondo=False):
 def borrar_foto_del_disco(ruta_foto):
     # Borra el archivo de la foto (si existe) de la carpeta static/uploads
     if ruta_foto:
-        ruta_completa = os.path.join("static", ruta_foto)
+        ruta_completa = os.path.join(CARPETA_STATIC, ruta_foto)
         if os.path.exists(ruta_completa):
             os.remove(ruta_completa)
 
@@ -377,7 +381,7 @@ def leer_formulario_prenda():
 def completar_datos(datos, ruta_foto):
     # Si el usuario dejó el color vacío, lo detectamos de la foto 🎨
     if datos["color"] == "" and ruta_foto:
-        datos["color"] = detectar_color(os.path.join("static", ruta_foto))
+        datos["color"] = detectar_color(os.path.join(CARPETA_STATIC, ruta_foto))
     # Si dejó el nombre vacío, lo armamos: "Camisa blanca" ✏️
     if datos["nombre"] == "":
         datos["nombre"] = (datos["tipo"] + " " + concordar_color(datos["tipo"], datos["color"])).strip()
@@ -655,7 +659,7 @@ def quitar_fondo_prenda(id):
         flash("⚠️ Esa prenda no tiene foto")
         return redirect("/prendas")
 
-    ruta_vieja = os.path.join("static", prenda["foto"])
+    ruta_vieja = os.path.join(CARPETA_STATIC, prenda["foto"])
     with open(ruta_vieja, "rb") as archivo:
         imagen_sin_fondo = quitar_fondo(archivo.read())
 
