@@ -500,3 +500,23 @@ def test_mi_cuenta_generar_codigo_nuevo(cliente):
 def test_mi_cuenta_pide_sesion(cliente):
     assert cliente.get("/mi-cuenta").status_code == 302
 
+
+# ---------- 📩 Contacto y administrador ----------
+
+def test_contacto_se_ve_sin_iniciar_sesion(cliente):
+    pagina = cliente.get("/contacto").get_data(as_text=True)
+    assert "araneafabricio@gmail.com" in pagina
+
+
+def test_olvide_enlaza_a_contacto(cliente):
+    assert "/contacto" in cliente.get("/olvide").get_data(as_text=True)
+
+
+def test_admin_restablece_acceso(cliente):
+    correo = crear_usuario(cliente)
+    cliente.get("/salir")
+    temporal, codigo = armario.restablecer_acceso(correo)
+    assert "Hola de nuevo" in cliente.post("/entrar", data={"correo": correo, "contrasena": temporal},
+                                           follow_redirects=True).get_data(as_text=True)
+    assert armario.restablecer_acceso("no-existe@prueba.com") is None
+

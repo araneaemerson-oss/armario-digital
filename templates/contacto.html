@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <div class="auth">
+        <h1>Contáctame</h1>
+        <p class="subtitulo">¿Tienes un problema o una idea para la app? Escríbeme. 📩</p>
+
+        <div class="formulario">
+            <span class="etiqueta">📧 Correo de soporte</span>
+            <a class="correo-soporte" href="mailto:{{ CORREO_SOPORTE }}?subject=Ayuda%20con%20Armario%20Digital">{{ CORREO_SOPORTE }}</a>
+
+            <span class="etiqueta">🆘 ¿Perdiste tu contraseña y tu código de recuperación?</span>
+            <ol class="pasos-soporte">
+                <li>Escríbeme <strong>desde el mismo correo</strong> con el que creaste tu cuenta</li>
+                <li>Cuéntame tu <strong>nombre</strong> y que quieres recuperar tu cuenta</li>
+                <li>Te responderé con una <strong>contraseña temporal</strong> y un <strong>código nuevo</strong></li>
+                <li>Entra y cambia la contraseña en <strong>Mi cuenta</strong> 🔑</li>
+            </ol>
+            <p class="ayuda">🔒 Nunca te pediré tu contraseña. Por seguridad, solo ayudo a recuperar cuentas si el correo coincide.</p>
+
+            <a href="mailto:{{ CORREO_SOPORTE }}?subject=Recuperar%20mi%20cuenta%20-%20Armario%20Digital" class="boton boton-principal boton-grande centrado">✉️ Escribir un correo</a>
+        </div>
+    </div>
+{% endblock %}

@@ -114,6 +114,9 @@ TIPOS = [
 ]
 OCASIONES = ["Casual", "Formal", "Fiesta", "Deporte"]
 
+# Correo de soporte: a dónde escriben los usuarios si necesitan ayuda 📩
+CORREO_SOPORTE = "araneafabricio@gmail.com"
+
 # Para escribir bien el nombre automático: "Camisa blanca", "Zapatos negros", "Pantalón azul"
 TIPOS_FEMENINOS = ["Camisa", "Blusa", "Chaqueta", "Falda"]
 TIPOS_PLURALES = ["Zapatos", "Tacos", "Accesorios"]
@@ -160,6 +163,7 @@ ORDEN_CUERPO = {
 @app.context_processor
 def datos_globales():
     return {"TIPOS": TIPOS, "OCASIONES": OCASIONES, "REMBG_DISPONIBLE": REMBG_DISPONIBLE,
+            "CORREO_SOPORTE": CORREO_SOPORTE,
             "PARTE_DEL_CUERPO": PARTE_DEL_CUERPO}
 
 
@@ -360,7 +364,7 @@ def hoy():
 
 
 # ---------- Proteger las páginas: hay que iniciar sesión ----------
-PAGINAS_LIBRES = ["entrar", "registro", "olvide", "static"]
+PAGINAS_LIBRES = ["entrar", "registro", "olvide", "contacto", "static"]
 
 @app.before_request
 def pedir_inicio_de_sesion():
@@ -743,6 +747,28 @@ def mi_cuenta():
 
     conexion.close()
     return render_template("mi_cuenta.html", usuario=usuario, tiene_codigo=bool(usuario["codigo_hash"]))
+
+
+@app.route("/contacto")
+def contacto():
+    return render_template("contacto.html")
+
+
+# ---------- 🛠️ Herramienta de administrador (la usa admin.py) ----------
+def restablecer_acceso(correo):
+    # Pone una contraseña temporal y un código nuevo. Devuelve (contraseña, código) o None si no existe
+    conexion = conectar()
+    usuario = conexion.execute("SELECT id FROM usuarios WHERE correo=?", (correo.strip().lower(),)).fetchone()
+    if usuario is None:
+        conexion.close()
+        return None
+    temporal = "Temp-" + secrets.token_urlsafe(6)
+    conexion.execute("UPDATE usuarios SET contrasena_hash=? WHERE id=?",
+                     (generate_password_hash(temporal), usuario["id"]))
+    codigo = nuevo_codigo_para(conexion, usuario["id"])
+    conexion.commit()
+    conexion.close()
+    return temporal, codigo
 
 
 @app.route("/salir")

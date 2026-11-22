@@ -1218,3 +1218,23 @@ a.nav-usuario {
     border-radius: 8px;
     text-decoration: none;
 }
+
+
+/* ---------- 📩 Contacto y pie de página ---------- */
+.correo-soporte {
+    font-size: 20px;
+    font-weight: 800;
+    word-break: break-all;
+}
+.pasos-soporte {
+    margin: 0;
+    padding-left: 20px;
+    line-height: 1.8;
+    font-size: 15px;
+}
+.pie {
+    text-align: center;
+    padding: 24px 16px 32px;
+    font-size: 13px;
+    color: #8A867E;
+}
