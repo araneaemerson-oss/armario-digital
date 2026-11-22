@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, flash, session, jsonify
 from werkzeug.security import generate_password_hash, check_password_hash
-import os, uuid, random, colorsys, json, time, datetime, urllib.request
+import os, uuid, random, colorsys, json, time, datetime, urllib.request, secrets
 from werkzeug.utils import secure_filename
 import sqlite3 
 
@@ -65,6 +65,13 @@ def crear_tabla():
         columnas.append(columna["name"])
     if "usuario_id" not in columnas:
         conexion.execute("ALTER TABLE prendas ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)")
+
+    # Código de recuperación de cada usuario (guardado como hash, igual que la contraseña) 🔑
+    columnas_usuarios = []
+    for columna in conexion.execute("PRAGMA table_info(usuarios)").fetchall():
+        columnas_usuarios.append(columna["name"])
+    if "codigo_hash" not in columnas_usuarios:
+        conexion.execute("ALTER TABLE usuarios ADD COLUMN codigo_hash TEXT")
 
     # Registro de uso: qué prenda te pusiste y qué día 📊
     conexion.execute("""
@@ -353,7 +360,7 @@ def hoy():
 
 
 # ---------- Proteger las páginas: hay que iniciar sesión ----------
-PAGINAS_LIBRES = ["entrar", "registro", "static"]
+PAGINAS_LIBRES = ["entrar", "registro", "olvide", "static"]
 
 @app.before_request
 def pedir_inicio_de_sesion():
@@ -578,6 +585,26 @@ def editar(id):
     
         
 
+# ---------- 🔑 Código de recuperación ----------
+LETRAS_CODIGO = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"     # sin O/0, I/1/L para no confundirse
+
+def generar_codigo():
+    # Crea un código como "K7M2-Q9XP-4TRB" con letras al azar (secrets = azar seguro)
+    letras = "".join(secrets.choice(LETRAS_CODIGO) for _ in range(12))
+    return letras[0:4] + "-" + letras[4:8] + "-" + letras[8:12]
+
+def limpiar_codigo(codigo):
+    # "k7m2 q9xp-4trb" → "K7M2Q9XP4TRB" (así no importan los guiones, espacios ni mayúsculas)
+    return "".join(c for c in codigo.upper() if c.isalnum())
+
+def nuevo_codigo_para(conexion, usuario_id):
+    # Genera un código nuevo, guarda SOLO su hash y devuelve el código para mostrarlo una vez
+    codigo = generar_codigo()
+    conexion.execute("UPDATE usuarios SET codigo_hash=? WHERE id=?",
+                     (generate_password_hash(limpiar_codigo(codigo)), usuario_id))
+    return codigo
+
+
 # ---------- Usuarios: registro, entrar y salir ----------
 @app.route("/registro", methods=["GET","POST"])
 def registro():
@@ -601,6 +628,7 @@ def registro():
             # Si eres el PRIMER usuario, te quedas con las prendas que ya existían sin dueño
             if cursor.lastrowid == conexion.execute("SELECT MIN(id) FROM usuarios").fetchone()[0]:
                 conexion.execute("UPDATE prendas SET usuario_id = ? WHERE usuario_id IS NULL", (cursor.lastrowid,))
+            codigo = nuevo_codigo_para(conexion, cursor.lastrowid)
             conexion.commit()
         except sqlite3.IntegrityError:          # pasa cuando el correo ya existe (por el UNIQUE)
             conexion.close()
@@ -612,7 +640,7 @@ def registro():
         session["usuario_id"] = cursor.lastrowid
         session["usuario_nombre"] = nombre
         flash(f"🎉 ¡Bienvenido, {nombre}! Tu cuenta fue creada")
-        return redirect("/")
+        return render_template("codigo.html", codigo=codigo)     # 🔑 se muestra UNA sola vez
 
     return render_template("registro.html")
 
@@ -639,6 +667,82 @@ def entrar():
         return render_template("entrar.html", correo=correo)
 
     return render_template("entrar.html")
+
+
+@app.route("/olvide", methods=["GET","POST"])
+def olvide():
+    if request.method=="POST":
+        correo = request.form.get("correo", "").strip().lower()
+        codigo = limpiar_codigo(request.form.get("codigo", ""))
+        nueva = request.form.get("nueva", "")
+
+        if len(nueva) < 6:
+            flash("⚠️ La contraseña nueva debe tener al menos 6 caracteres")
+            return render_template("olvide.html", correo=correo)
+
+        conexion = conectar()
+        usuario = conexion.execute("SELECT * FROM usuarios WHERE correo=?", (correo,)).fetchone()
+        if usuario is None or not usuario["codigo_hash"] or not check_password_hash(usuario["codigo_hash"], codigo):
+            conexion.close()
+            flash("⚠️ Correo o código de recuperación incorrectos")     # no decimos cuál de los dos falló 🕵️
+            return render_template("olvide.html", correo=correo)
+
+        # Cambiamos la contraseña y damos un código NUEVO (el viejo ya se usó)
+        conexion.execute("UPDATE usuarios SET contrasena_hash=? WHERE id=?",
+                         (generate_password_hash(nueva), usuario["id"]))
+        codigo_nuevo = nuevo_codigo_para(conexion, usuario["id"])
+        conexion.commit()
+        conexion.close()
+
+        session.clear()
+        session["usuario_id"] = usuario["id"]
+        session["usuario_nombre"] = usuario["nombre"]
+        flash("🔑 ¡Listo! Cambiaste tu contraseña")
+        return render_template("codigo.html", codigo=codigo_nuevo)
+
+    return render_template("olvide.html")
+
+
+@app.route("/mi-cuenta", methods=["GET","POST"])
+def mi_cuenta():
+    conexion = conectar()
+    usuario = conexion.execute("SELECT * FROM usuarios WHERE id=?", (session["usuario_id"],)).fetchone()
+    if usuario is None:
+        conexion.close()
+        session.clear()
+        return redirect("/entrar")
+
+    if request.method=="POST":
+        actual = request.form.get("actual", "")
+        accion = request.form.get("accion")
+        # Para cualquier cambio pedimos la contraseña actual (por si alguien dejó la sesión abierta) 🔒
+        if not check_password_hash(usuario["contrasena_hash"], actual):
+            conexion.close()
+            flash("⚠️ Tu contraseña actual no es correcta")
+            return redirect("/mi-cuenta")
+
+        if accion == "cambiar":
+            nueva = request.form.get("nueva", "")
+            if len(nueva) < 6:
+                conexion.close()
+                flash("⚠️ La contraseña nueva debe tener al menos 6 caracteres")
+                return redirect("/mi-cuenta")
+            conexion.execute("UPDATE usuarios SET contrasena_hash=? WHERE id=?",
+                             (generate_password_hash(nueva), usuario["id"]))
+            conexion.commit()
+            conexion.close()
+            flash("🔑 Contraseña cambiada")
+            return redirect("/mi-cuenta")
+
+        if accion == "codigo":
+            codigo = nuevo_codigo_para(conexion, usuario["id"])
+            conexion.commit()
+            conexion.close()
+            flash("🔑 Generamos un código nuevo. El anterior ya no sirve")
+            return render_template("codigo.html", codigo=codigo)
+
+    conexion.close()
+    return render_template("mi_cuenta.html", usuario=usuario, tiene_codigo=bool(usuario["codigo_hash"]))
 
 
 @app.route("/salir")

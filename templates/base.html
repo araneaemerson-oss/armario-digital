@@ -20,7 +20,7 @@
                 <a href="/subir" class="{% if request.path == '/subir' %}activo{% endif %}">Subir prenda</a>
                 <a href="/outfits" class="{% if request.path.startswith('/outfits') %}activo{% endif %}">Outfits</a>
                 <a href="/mi-uso" class="{% if request.path == '/mi-uso' %}activo{% endif %}">Mi uso</a>
-                <span class="nav-usuario">👋 {{ session.usuario_nombre|title }}</span>
+                <a href="/mi-cuenta" class="nav-usuario {% if request.path == '/mi-cuenta' %}activo{% endif %}" title="Mi cuenta">👋 {{ session.usuario_nombre|title }}</a>
                 <a href="/salir">Salir</a>
             {% endif %}
         </div>

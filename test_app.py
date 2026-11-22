@@ -424,3 +424,79 @@ def test_no_puedes_editar_el_outfit_de_otro(cliente):
     assert conexion.execute("SELECT nombre FROM outfits WHERE id=?", (outfit_id,)).fetchone()["nombre"] == "de ana"
     conexion.close()
 
+
+# ---------- 🔑 Recuperar contraseña ----------
+
+import re
+
+def codigo_de(pagina):
+    # Saca el código "XXXX-XXXX-XXXX" que muestra la página
+    encontrado = re.search(r'id="codigo">([A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4})<', pagina)
+    return encontrado.group(1) if encontrado else None
+
+
+def test_registro_muestra_codigo_de_recuperacion(cliente):
+    respuesta = cliente.post("/registro", data={"nombre": "x", "correo": "codigo1@prueba.com", "contrasena": "123456"})
+    assert codigo_de(respuesta.get_data(as_text=True)) is not None
+
+
+def test_el_codigo_se_guarda_cifrado(cliente):
+    respuesta = cliente.post("/registro", data={"nombre": "x", "correo": "codigo2@prueba.com", "contrasena": "123456"})
+    codigo = codigo_de(respuesta.get_data(as_text=True))
+    conexion = armario.conectar()
+    guardado = conexion.execute("SELECT codigo_hash FROM usuarios WHERE correo=?", ("codigo2@prueba.com",)).fetchone()[0]
+    conexion.close()
+    assert guardado and codigo not in guardado and armario.limpiar_codigo(codigo) not in guardado
+
+
+def test_recuperar_contrasena_con_el_codigo(cliente):
+    respuesta = cliente.post("/registro", data={"nombre": "x", "correo": "codigo3@prueba.com", "contrasena": "123456"})
+    codigo = codigo_de(respuesta.get_data(as_text=True))
+    cliente.get("/salir")
+    # sin guiones y en minúsculas también funciona
+    respuesta = cliente.post("/olvide", data={"correo": "codigo3@prueba.com",
+                                               "codigo": codigo.replace("-", " ").lower(), "nueva": "nueva123"})
+    pagina = respuesta.get_data(as_text=True)
+    assert "Cambiaste tu contraseña" in pagina
+    codigo_nuevo = codigo_de(pagina)
+    assert codigo_nuevo and codigo_nuevo != codigo           # te damos un código nuevo
+    cliente.get("/salir")
+    assert "Hola de nuevo" in cliente.post("/entrar", data={"correo": "codigo3@prueba.com", "contrasena": "nueva123"},
+                                           follow_redirects=True).get_data(as_text=True)
+    # el código viejo ya no sirve
+    cliente.get("/salir")
+    respuesta = cliente.post("/olvide", data={"correo": "codigo3@prueba.com", "codigo": codigo, "nueva": "otra123"})
+    assert "incorrectos" in respuesta.get_data(as_text=True)
+
+
+def test_codigo_incorrecto_no_cambia_la_contrasena(cliente):
+    correo = crear_usuario(cliente)
+    cliente.get("/salir")
+    respuesta = cliente.post("/olvide", data={"correo": correo, "codigo": "AAAA-BBBB-CCCC", "nueva": "hackeada"})
+    assert "Correo o código de recuperación incorrectos" in respuesta.get_data(as_text=True)
+    assert "Hola de nuevo" in cliente.post("/entrar", data={"correo": correo, "contrasena": "123456"},
+                                           follow_redirects=True).get_data(as_text=True)
+
+
+def test_mi_cuenta_cambiar_contrasena(cliente):
+    correo = crear_usuario(cliente)
+    respuesta = cliente.post("/mi-cuenta", data={"accion": "cambiar", "actual": "mal", "nueva": "nueva123"},
+                             follow_redirects=True)
+    assert "contraseña actual no es correcta" in respuesta.get_data(as_text=True)
+    respuesta = cliente.post("/mi-cuenta", data={"accion": "cambiar", "actual": "123456", "nueva": "nueva123"},
+                             follow_redirects=True)
+    assert "Contraseña cambiada" in respuesta.get_data(as_text=True)
+    cliente.get("/salir")
+    assert "Hola de nuevo" in cliente.post("/entrar", data={"correo": correo, "contrasena": "nueva123"},
+                                           follow_redirects=True).get_data(as_text=True)
+
+
+def test_mi_cuenta_generar_codigo_nuevo(cliente):
+    crear_usuario(cliente)
+    respuesta = cliente.post("/mi-cuenta", data={"accion": "codigo", "actual": "123456"})
+    assert codigo_de(respuesta.get_data(as_text=True)) is not None
+
+
+def test_mi_cuenta_pide_sesion(cliente):
+    assert cliente.get("/mi-cuenta").status_code == 302
+

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <div class="auth">
+        <h1>Tu código de recuperación</h1>
+        <p class="subtitulo">Si algún día olvidas tu contraseña, lo vas a necesitar. 🔑</p>
+
+        <div class="formulario">
+            <div class="codigo-caja" id="codigo">{{ codigo }}</div>
+            <button type="button" class="boton-sugerir" id="btn-copiar">📋 Copiar código</button>
+
+            <div class="aviso-codigo">
+                <strong>⚠️ Guárdalo ahora</strong>
+                <ul>
+                    <li>Solo lo verás <strong>esta vez</strong>: nosotros lo guardamos cifrado y no podemos mostrártelo de nuevo</li>
+                    <li>Anótalo en un papel, en tus notas o en un gestor de contraseñas</li>
+                    <li>Si lo pierdes, puedes crear uno nuevo en <strong>Mi cuenta</strong></li>
+                </ul>
+            </div>
+
+            <a href="/" class="boton boton-principal boton-grande centrado">✅ Ya lo guardé, continuar</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById("btn-copiar").addEventListener("click", async function () {
+            try {
+                await navigator.clipboard.writeText(document.getElementById("codigo").textContent.trim());
+                this.textContent = "✅ ¡Copiado!";
+            } catch (error) {
+                this.textContent = "Selecciónalo y cópialo a mano";
+            }
+        });
+    </script>
+{% endblock %}

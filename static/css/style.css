@@ -1174,3 +1174,47 @@ button.outfit-fotos:hover .lupa {
     display: inline-block;
     margin-top: 20px;
 }
+
+
+/* ---------- 🔑 Recuperar contraseña y Mi cuenta ---------- */
+.olvide-enlace {
+    align-self: flex-end;
+    font-size: 13px;
+    margin-top: 6px;
+}
+.codigo-caja {
+    font-family: "Courier New", monospace;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    text-align: center;
+    padding: 20px;
+    border: 2px dashed #2F5D50;
+    border-radius: 14px;
+    background-color: #F3F8F5;
+    user-select: all;            /* un clic selecciona todo el código */
+}
+.aviso-codigo {
+    background-color: #FFF8E8;
+    border: 1px solid #F0E2BC;
+    border-radius: 14px;
+    padding: 14px 18px;
+    font-size: 14px;
+    margin-top: 12px;
+}
+.aviso-codigo ul {
+    margin: 8px 0 0;
+    padding-left: 18px;
+    line-height: 1.6;
+}
+.centrado {
+    text-align: center;
+    margin-top: 16px;
+}
+.segundo-formulario {
+    margin-top: 24px;
+}
+a.nav-usuario {
+    border-radius: 8px;
+    text-decoration: none;
+}

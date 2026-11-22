@@ -7,6 +7,7 @@ Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan e
 ## ✨ Funcionalidades
 
 - 🔐 **Cuentas de usuario**: registro, inicio y cierre de sesión con contraseñas cifradas (hash)
+- 🆘 **Recuperar contraseña** con un código de recuperación (guardado cifrado) y página **Mi cuenta** para cambiar la contraseña
 - 🙈 Cada usuario ve, edita y borra **solo su propia ropa**
 - 📸 Subir prendas con foto (con vista previa), tipo, color, ocasión y nombre opcional
 - ✂️ Quitar el fondo de las fotos automáticamente con IA (`rembg`)
@@ -49,7 +50,7 @@ La base de datos (`armario.db`) se crea sola la primera vez que se ejecuta la ap
 
 ## 🧪 Pruebas automáticas
 
-El proyecto tiene **40 pruebas automáticas** con `pytest` que revisan el login, la seguridad entre usuarios, las prendas, los outfits, el clima, el registro de uso y las funciones de color. Usan una base de datos temporal, así que no tocan tus datos.
+El proyecto tiene **47 pruebas automáticas** con `pytest` que revisan el login, la seguridad entre usuarios, las prendas, los outfits, el clima, el registro de uso y las funciones de color. Usan una base de datos temporal, así que no tocan tus datos.
 
 ```
 python -m pytest -v

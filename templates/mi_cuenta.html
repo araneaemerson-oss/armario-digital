@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <div class="auth">
+        <h1>Mi cuenta</h1>
+        <p class="subtitulo">👤 {{ usuario.nombre }} · {{ usuario.correo }}</p>
+
+        <form method="POST" class="formulario">
+            <input type="hidden" name="accion" value="cambiar">
+            <span class="etiqueta">🔑 Cambiar contraseña</span>
+            <label for="actual1">Contraseña actual</label>
+            <input type="password" id="actual1" name="actual" required>
+            <label for="nueva">Contraseña nueva</label>
+            <input type="password" id="nueva" name="nueva" placeholder="Mínimo 6 caracteres" minlength="6" required>
+            <button type="submit">Cambiar contraseña</button>
+        </form>
+
+        <form method="POST" class="formulario segundo-formulario">
+            <input type="hidden" name="accion" value="codigo">
+            <span class="etiqueta">🆘 Código de recuperación</span>
+            {% if tiene_codigo %}
+                <p class="ayuda">✅ Ya tienes un código. Si lo perdiste, genera uno nuevo (el anterior dejará de funcionar).</p>
+            {% else %}
+                <p class="ayuda">⚠️ Todavía no tienes un código. ¡Genéralo ahora para poder recuperar tu cuenta!</p>
+            {% endif %}
+            <label for="actual2">Contraseña actual</label>
+            <input type="password" id="actual2" name="actual" required>
+            <button type="submit">Generar código nuevo</button>
+        </form>
+    </div>
+{% endblock %}

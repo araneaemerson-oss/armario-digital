@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block contenido %}
+    <div class="auth">
+        <h1>¿Olvidaste tu contraseña?</h1>
+        <p class="subtitulo">Usa el código de recuperación que te dimos al crear tu cuenta. 🔑</p>
+
+        <form method="POST" class="formulario">
+            <label for="correo">Correo</label>
+            <input type="email" id="correo" name="correo" value="{{ correo or '' }}" placeholder="tucorreo@ejemplo.com" required>
+
+            <label for="codigo">Código de recuperación</label>
+            <input type="text" id="codigo" name="codigo" placeholder="XXXX-XXXX-XXXX" autocomplete="off" required>
+
+            <label for="nueva">Contraseña nueva</label>
+            <input type="password" id="nueva" name="nueva" placeholder="Mínimo 6 caracteres" minlength="6" required>
+
+            <button type="submit">Cambiar contraseña</button>
+            <p class="auth-pie">¿Te acordaste? <a href="/entrar">Entra aquí</a></p>
+            <p class="ayuda">💡 ¿Perdiste también el código? Por seguridad, sin él no se puede recuperar la cuenta.</p>
+        </form>
+    </div>
+{% endblock %}
