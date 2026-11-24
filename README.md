@@ -2,7 +2,19 @@
 
 Aplicación web para organizar tu ropa: tomas fotos de tus prendas, se guardan en tu armario digital y puedes verlas todas en un solo lugar, sin abrir el clóset.
 
-> Proyecto personal en desarrollo, creado para practicar desarrollo web con Python.
+> Proyecto personal creado para practicar desarrollo web con Python.
+
+🌐 **Pruébala en vivo:** https://fabri14.pythonanywhere.com (crea tu cuenta gratis)
+
+## 📸 Capturas
+
+| Inicio con el outfit del día | Mis prendas |
+|---|---|
+| ![Inicio](docs/capturas/inicio.jpg) | ![Mis prendas](docs/capturas/prendas.jpg) |
+
+| Ver un outfit | Iniciar sesión |
+|---|---|
+| ![Outfit](docs/capturas/outfit.jpg) | ![Login](docs/capturas/login.jpg) |
 
 ## ✨ Funcionalidades
 

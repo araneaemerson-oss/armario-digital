@@ -39,6 +39,10 @@
             </div>
         {% else %}
             {% for texto in explicacion %}<p class="ayuda">{{ texto }}</p>{% endfor %}
+            {% if not explicacion %}
+                <p class="ayuda">👕 Sube una prenda de arriba, una de abajo y unos zapatos, y aquí te armo una idea para hoy.</p>
+                <div class="hero-botones"><a href="/subir" class="boton boton-principal">+ Subir mi primera prenda</a></div>
+            {% endif %}
         {% endif %}
     </div>
     {% if sugerencia %}
