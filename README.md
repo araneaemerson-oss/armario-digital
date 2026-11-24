@@ -56,6 +56,7 @@ Desde la consola del servidor:
 ```
 python admin.py usuarios
 python admin.py restablecer correo@ejemplo.com
+python admin.py limpiar
 ```
 
 ## 🧪 Pruebas automáticas
